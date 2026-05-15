@@ -286,41 +286,6 @@
       opacity: 0.7;
     }
 
-    /* —— セクションヘッダ —— */
-    .section-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-lg);
-      padding-bottom: 0;
-    }
-
-    .section-head h2 {
-      margin: 0;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-    }
-
-    .section-head .view-title {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      text-transform: none;
-      color: var(--ink);
-      line-height: 1.2;
-      margin-top: 4px;
-    }
-
-    .count {
-      font-size: 12px;
-      color: var(--ink-muted);
-    }
-
     /* —— 大項目グループ（すべて表示時） —— */
     .major-section {
       margin-bottom: var(--space-xl);
@@ -1012,14 +977,6 @@
 
     <nav id="categoryGrid" class="category-nav" aria-label="大項目"></nav>
 
-    <div class="section-head">
-      <div>
-        <h2>表示中</h2>
-        <div id="currentTitle" class="view-title">すべて</div>
-      </div>
-      <div id="count" class="count"></div>
-    </div>
-
     <div id="items"></div>
   </main>
   </div>
@@ -1118,8 +1075,6 @@
 
     const categoryGrid = document.getElementById("categoryGrid");
     const itemsEl = document.getElementById("items");
-    const titleEl = document.getElementById("currentTitle");
-    const countEl = document.getElementById("count");
     const gradeFilter = document.getElementById("gradeFilter");
     const myGradeSelect = document.getElementById("myGradeSelect");
     const userNameInput = document.getElementById("userName");
@@ -1280,9 +1235,6 @@
       renderCategories();
 
       let filtered = data.filter(d => currentCategory === "all" || d.category === currentCategory);
-
-      titleEl.textContent = currentCategory === "all" ? "すべて" : currentCategory;
-      countEl.textContent = `${filtered.length} 小項目`;
 
       if (!filtered.length) {
         itemsEl.innerHTML = `<div class="empty">該当する項目がありません。</div>`;
