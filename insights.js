@@ -289,7 +289,9 @@ ${ctx.minutes || "（なし）"}`;
 
     const assessments = loadAssessments();
     const userName = localStorage.getItem(USER_NAME_KEY) || "";
-    const gradeIndex = Number(localStorage.getItem(MY_GRADE_KEY));
+    const rawGrade = localStorage.getItem(MY_GRADE_KEY);
+    const gradeIndex =
+      rawGrade === null || rawGrade === "" ? -1 : Number(rawGrade);
     const gradeName =
       gradeIndex >= 0 && grades[gradeIndex] ? `${grades[gradeIndex].name}` : "未設定";
 
@@ -300,23 +302,37 @@ ${ctx.minutes || "（なし）"}`;
     const alertEl = document.getElementById("completionAlert");
     const mainEl = document.getElementById("summaryMain");
 
-    if (!stats.complete) {
+    if (stats.rated.length === 0) {
       alertEl.hidden = false;
-      alertEl.textContent = `自己評価が未完了です（${stats.rated.length} / ${stats.total} 項目）。行動指針ページですべての10段階評価を入力・保存してからご覧ください。`;
+      alertEl.className = "alert";
+      alertEl.textContent =
+        "自己評価がまだありません。行動指針ページで10段階評価を入力し「保存する」を押してから、再度お越しください。";
       mainEl.hidden = true;
-      document.getElementById("backLink").href = "index.html";
       return;
     }
 
-    alertEl.hidden = true;
+    if (!stats.complete) {
+      alertEl.hidden = false;
+      alertEl.className = "alert alert-warn";
+      alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は行動指針ページで評価・保存してください。`;
+    } else {
+      alertEl.hidden = true;
+    }
+
     mainEl.hidden = false;
+    mainEl.removeAttribute("hidden");
 
     document.getElementById("avgScore10").textContent = stats.avg10.toFixed(2);
     document.getElementById("avgScoreDisplay").textContent = stats.avgDisplay.toFixed(2);
 
-    const tier = gradeIndex === 0 ? getIkuseiTier(stats.avgDisplay) : getUpperTier(stats.avgDisplay);
+    const tier =
+      gradeIndex === 0
+        ? getIkuseiTier(stats.avgDisplay)
+        : getUpperTier(stats.avgDisplay);
     renderPromoScale(gradeIndex, stats.avgDisplay);
-    renderRadar(stats.middleList);
+    if (stats.middleList.length) {
+      renderRadar(stats.middleList);
+    }
     renderItemTable(stats.rows);
 
     const minutesTa = document.getElementById("minutesText");

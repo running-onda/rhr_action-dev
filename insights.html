@@ -111,6 +111,13 @@
       padding: 14px 16px;
       border-radius: var(--radius);
       font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .alert-warn {
+      background: #fff8e6;
+      border-color: #e6d9a8;
+      color: #7a5c00;
     }
     .summary-meta {
       display: flex;
@@ -391,6 +398,7 @@
     </main>
   </div>
 
+  <script src="insights.js"></script>
   <script>
     const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
     const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
@@ -404,8 +412,12 @@
       sessionStorage.setItem(AUTH_SESSION_KEY, "1");
       document.body.classList.remove("is-locked");
       document.getElementById("authGate").hidden = true;
-      document.getElementById("appContent").hidden = false;
-      window.initInsights();
+      const app = document.getElementById("appContent");
+      app.hidden = false;
+      app.removeAttribute("hidden");
+      if (typeof window.initInsights === "function") {
+        window.initInsights();
+      }
     }
 
     function lockApp() {
@@ -433,6 +445,5 @@
       unlockApp();
     }
   </script>
-  <script src="insights.js"></script>
 </body>
 </html>

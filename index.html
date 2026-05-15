@@ -159,13 +159,33 @@
     .save-toast {
       font-size: 12px;
       color: var(--sage);
-      font-weight: 600;
+      font-weight: 700;
       opacity: 0;
       transition: opacity 0.3s;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: transparent;
     }
 
     .save-toast.visible {
       opacity: 1;
+      background: #eef4ef;
+      border: 1px solid #6b9b7a;
+    }
+
+    .save-status {
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: auto;
+      letter-spacing: 0.04em;
+    }
+
+    .save-status.saved {
+      color: #3d7a52;
+    }
+
+    .save-status.unsaved {
+      color: var(--ink-muted);
     }
 
     #userName {
@@ -1140,7 +1160,40 @@
       saveToast.textContent = msg;
       saveToast.classList.add("visible");
       clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => saveToast.classList.remove("visible"), 2200);
+      saveToast._t = setTimeout(() => saveToast.classList.remove("visible"), 3500);
+    }
+
+    function formatSavedAt(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      } catch {
+        return "";
+      }
+    }
+
+    function renderSaveStatus(saved) {
+      if (saved?.updatedAt) {
+        const when = formatSavedAt(saved.updatedAt);
+        return `<span class="save-status saved">保存済${when ? `（${when}）` : ""}</span>`;
+      }
+      return `<span class="save-status unsaved">未保存</span>`;
+    }
+
+    function markBlockSaved(block, iso) {
+      const actions = block.querySelector(".assess-actions");
+      if (!actions) return;
+      let el = actions.querySelector(".save-status");
+      const when = formatSavedAt(iso);
+      const text = `保存済${when ? `（${when}）` : ""}`;
+      if (!el) {
+        el = document.createElement("span");
+        el.className = "save-status saved";
+        actions.insertBefore(el, actions.firstChild);
+      }
+      el.className = "save-status saved";
+      el.textContent = text;
     }
 
     grades.forEach((g, i) => {
@@ -1358,6 +1411,7 @@
           </div>
           <button type="button" class="btn-add-supervisor">＋ 上司を追加</button>
           <div class="assess-actions">
+            ${renderSaveStatus(saved)}
             <button type="button" class="btn-save-item assess-save">保存する</button>
           </div>
         </div>
@@ -1452,14 +1506,27 @@
         updatedAt: new Date().toISOString()
       };
       saveAssessments();
-      showToast("保存しました");
+      markBlockSaved(block, assessments[key].updatedAt);
+      showToast("保存済");
     }
 
     function saveAllAssessments() {
+      const now = new Date().toISOString();
       itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
-        saveItemAssessment(block.dataset.assessKey, block);
+        const key = block.dataset.assessKey;
+        const name = userNameInput.value.trim();
+        if (name) localStorage.setItem(USER_NAME_KEY, name);
+        const data = readAssessFromBlock(block);
+        assessments[key] = {
+          ...data,
+          userName: name,
+          myGrade: myGradeSelect.value,
+          updatedAt: now
+        };
+        markBlockSaved(block, now);
       });
-      showToast("すべて保存しました");
+      saveAssessments();
+      showToast("保存済（すべて）");
     }
 
     function renderAndBind() {
