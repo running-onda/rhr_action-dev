@@ -754,9 +754,143 @@
       main { padding: var(--space-md); }
       .self-assess { padding: 18px 16px; }
     }
+
+    body.is-locked {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    body.is-locked #appContent {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.is-locked #authGate {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body:not(.is-locked) #authGate {
+      display: none;
+    }
+
+    .auth-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.06);
+    }
+
+    .auth-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .auth-card p {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      line-height: 1.6;
+    }
+
+    .auth-card label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .auth-card input[type="password"] {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .auth-card input[type="password"]:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .auth-error {
+      min-height: 1.25em;
+      font-size: 12px;
+      color: #b42318;
+      margin-bottom: 8px;
+    }
+
+    .auth-submit {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .auth-submit:hover {
+      opacity: 0.92;
+    }
+
+    .btn-logout {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-secondary);
+      border-radius: var(--radius);
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--ink-muted);
+      color: var(--ink);
+    }
   </style>
 </head>
-<body>
+<body class="is-locked">
+  <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+    <div class="auth-card">
+      <h2 id="authTitle">行動指針ビューア</h2>
+      <p>社内利用のため、共有パスワードを入力してください。</p>
+      <form id="authForm">
+        <label for="authPassword">パスワード</label>
+        <input id="authPassword" type="password" autocomplete="current-password" required />
+        <p id="authError" class="auth-error" aria-live="polite"></p>
+        <button type="submit" class="auth-submit">入室する</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appContent" hidden inert aria-hidden="true">
   <header>
     <div class="header-inner">
       <div class="brand-block">
@@ -783,6 +917,7 @@
           </select>
         </div>
         <button type="button" class="btn-save-all" id="saveAllBtn">すべて保存</button>
+        <button type="button" class="btn-logout" id="logoutBtn">ログアウト</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
       </div>
     </div>
@@ -803,8 +938,73 @@
 
     <div id="items"></div>
   </main>
+  </div>
 
   <script>
+    const AUTH_SESSION_KEY = "rhr_guideline_auth_v1";
+    const ACCESS_PASSWORD_HASH = "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b";
+
+    async function hashPassword(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function unlockApp() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.body.classList.remove("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = true;
+      const app = document.getElementById("appContent");
+      app.hidden = false;
+      app.removeAttribute("inert");
+      app.removeAttribute("aria-hidden");
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      document.body.classList.add("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = false;
+      const app = document.getElementById("appContent");
+      app.hidden = true;
+      app.setAttribute("inert", "");
+      app.setAttribute("aria-hidden", "true");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
+      const items = document.getElementById("items");
+      if (items) items.innerHTML = "";
+    }
+
+    function initAuthGate(onUnlock) {
+      const form = document.getElementById("authForm");
+      const input = document.getElementById("authPassword");
+      const errEl = document.getElementById("authError");
+
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+        unlockApp();
+        onUnlock();
+        return;
+      }
+
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        errEl.textContent = "";
+        const hash = await hashPassword(input.value);
+        if (hash === ACCESS_PASSWORD_HASH) {
+          unlockApp();
+          onUnlock();
+        } else {
+          errEl.textContent = "パスワードが違います。";
+          input.select();
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        lockApp();
+        input.focus();
+      });
+    }
+
     const grades = [
       { name: "育成選手", phase: "知る" },
       { name: "ファーム", phase: "試す" },
@@ -1492,7 +1692,7 @@
       saveAllAssessments();
     });
 
-    renderAndBind();
+    initAuthGate(() => renderAndBind());
   </script>
 </body>
 </html>
