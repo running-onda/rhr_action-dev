@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>行動指針ビューア</title>
+  <script src="env.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -21,7 +22,7 @@
   </style>
   <script>
     (function () {
-      var K = "rhr_guideline_auth_v2";
+      var K = window.APP_ENV.authSessionKey;
       if (sessionStorage.getItem(K) !== "1") return;
       document.documentElement.classList.add("auth-session-ok");
     })();
@@ -899,12 +900,23 @@
       border-color: var(--ink-muted);
       color: var(--ink);
     }
+
+    .env-banner {
+      background: #fff8e6;
+      border-bottom: 1px solid #e6d9a8;
+      color: #7a5c00;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 16px;
+      letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body class="is-locked">
   <script>
     (function () {
-      var K = "rhr_guideline_auth_v2";
+      var K = window.APP_ENV.authSessionKey;
       if (sessionStorage.getItem(K) !== "1") return;
       document.body.classList.remove("is-locked");
     })();
@@ -923,6 +935,7 @@
   </div>
 
   <div id="appContent" hidden inert aria-hidden="true">
+  <div id="envBanner" class="env-banner" hidden></div>
   <header>
     <div class="header-inner">
       <div class="brand-block">
@@ -973,8 +986,8 @@
   </div>
 
   <script>
-    const AUTH_SESSION_KEY = "rhr_guideline_auth_v2";
-    const ACCESS_PASSWORD_HASH = "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b";
+    const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
+    const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
 
     async function hashPassword(text) {
       const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -996,6 +1009,7 @@
     function lockApp() {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
       sessionStorage.removeItem("rhr_guideline_auth_v1");
+      sessionStorage.removeItem("rhr_guideline_auth_v2");
       document.documentElement.classList.remove("auth-session-ok");
       document.body.classList.add("is-locked");
       const gate = document.getElementById("authGate");
@@ -1362,9 +1376,16 @@
     const saveAllBtn = document.getElementById("saveAllBtn");
     const saveToast = document.getElementById("saveToast");
 
-    const STORAGE_KEY = "rhr-guideline-self-assessment";
-    const USER_NAME_KEY = "rhr-guideline-user-name";
-    const MY_GRADE_KEY = "rhr-guideline-my-grade";
+    const STORAGE_KEY = window.APP_ENV.storageKey;
+    const USER_NAME_KEY = window.APP_ENV.userNameKey;
+    const MY_GRADE_KEY = window.APP_ENV.myGradeKey;
+
+    document.title = window.APP_ENV.title;
+    const envBanner = document.getElementById("envBanner");
+    if (window.APP_ENV.id === "development" && envBanner) {
+      envBanner.textContent = "開発環境 — ここでの入力データは本番（社内公開版）とは別に保存されます";
+      envBanner.hidden = false;
+    }
 
     let currentCategory = "all";
     let assessments = loadAssessments();
