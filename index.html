@@ -109,10 +109,25 @@
       flex-wrap: wrap;
       align-items: flex-end;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 12px 16px;
       margin-left: auto;
       flex: 1 1 auto;
       min-width: 0;
+    }
+
+    .header-fields {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
     }
 
     .header-toolbar select,
@@ -120,7 +135,77 @@
       min-width: 0;
     }
 
-    .header-toolbar .save-toast {
+    .toolbar-group input,
+    .toolbar-group select {
+      height: 36px;
+      padding: 0 12px;
+      font-size: 12px;
+      line-height: 1.2;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+    .toolbar-group input:focus,
+    .toolbar-group select:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-header-secondary {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.12);
+    }
+
+    .btn-header-secondary:hover {
+      opacity: 0.92;
+    }
+
+    .btn-header-primary {
+      background: var(--gold);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.1);
+    }
+
+    .btn-header-primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn-header-ghost {
+      background: transparent;
+      color: var(--ink-secondary);
+      border: 1px solid var(--ink-muted);
+    }
+
+    .btn-header-ghost:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+      background: rgba(26, 39, 68, 0.04);
+    }
+
+    .header-actions .save-toast {
       align-self: center;
     }
 
@@ -190,15 +275,11 @@
 
     #userName {
       width: 120px;
-      padding: 6px 10px;
-      font-size: 12px;
     }
 
     #myGradeSelect,
     #gradeFilter {
       width: 132px;
-      padding: 6px 10px;
-      font-size: 12px;
     }
 
     select, input, textarea, button {
@@ -295,6 +376,18 @@
       margin-bottom: 0;
     }
 
+    .sticky-sentinel {
+      height: 1px;
+      margin: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .major-header,
+    .single-major-banner {
+      transition: background 0.2s ease, padding 0.2s ease, color 0.2s ease;
+    }
+
     .major-header {
       display: flex;
       align-items: baseline;
@@ -313,6 +406,7 @@
       letter-spacing: 0.03em;
       color: var(--major-color, var(--ink));
       line-height: 1.15;
+      transition: color 0.2s ease;
     }
 
     .major-header .middle-name {
@@ -320,6 +414,24 @@
       font-weight: 500;
       color: var(--ink-secondary);
       letter-spacing: 0.02em;
+      transition: color 0.2s ease;
+    }
+
+    .major-header.is-stuck,
+    .single-major-banner.is-stuck {
+      background: var(--major-color, var(--sage));
+      padding: 12px 20px;
+      margin-bottom: var(--space-lg);
+    }
+
+    .major-header.is-stuck .major-name,
+    .single-major-banner.is-stuck .major-name {
+      color: #e4e6e8;
+    }
+
+    .major-header.is-stuck .middle-name,
+    .single-major-banner.is-stuck .middle-name {
+      color: #c5cad1;
     }
 
     /* —— 単一大項目表示時のヘッダ —— */
@@ -338,12 +450,14 @@
       color: var(--major-color, var(--ink));
       letter-spacing: 0.03em;
       line-height: 1.15;
+      transition: color 0.2s ease;
     }
 
     .single-major-banner .middle-name {
       font-size: 15px;
       color: var(--ink-secondary);
       margin-top: 6px;
+      transition: color 0.2s ease;
     }
 
     /* —— 小項目カード —— */
@@ -703,40 +817,6 @@
       transform: translateY(-1px);
     }
 
-    .btn-insights {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink-secondary);
-      border-radius: var(--radius);
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .btn-insights:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-    }
-
-    .btn-save-all {
-      border: 1px solid var(--gold);
-      background: transparent;
-      color: var(--ink);
-      border-radius: var(--radius);
-      padding: 6px 12px;
-      font-size: 12px;
-      min-width: 0;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .btn-save-all:hover {
-      background: rgba(201, 162, 39, 0.12);
-    }
-
     @media (max-width: 900px) {
       .step {
         grid-template-columns: 1fr;
@@ -887,23 +967,6 @@
       opacity: 0.92;
     }
 
-    .btn-logout {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink-secondary);
-      border-radius: var(--radius);
-      padding: 6px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .btn-logout:hover {
-      border-color: var(--ink-muted);
-      color: var(--ink);
-    }
-
     .env-banner {
       background: #fff8e6;
       border-bottom: 1px solid #e6d9a8;
@@ -947,7 +1010,8 @@
           <h1>行動指針</h1>
         </div>
       </div>
-      <div class="header-toolbar toolbar">
+      <div class="header-toolbar">
+        <div class="header-fields">
         <div class="toolbar-group">
           <label for="userName">氏名</label>
           <input id="userName" type="text" placeholder="名前を入力" autocomplete="name" />
@@ -964,10 +1028,13 @@
             <option value="all">全職級を表示</option>
           </select>
         </div>
-        <a href="insights.html" class="btn-insights">評価サマリー</a>
-        <button type="button" class="btn-save-all" id="saveAllBtn">すべて保存</button>
-        <button type="button" class="btn-logout" id="logoutBtn">ログアウト</button>
-        <span class="save-toast" id="saveToast" aria-live="polite"></span>
+        </div>
+        <div class="header-actions">
+          <a href="insights.html" class="btn-header btn-header-secondary">評価サマリー</a>
+          <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
+          <button type="button" class="btn-header btn-header-ghost" id="logoutBtn">ログアウト</button>
+          <span class="save-toast" id="saveToast" aria-live="polite"></span>
+        </div>
       </div>
     </div>
   </header>
@@ -1248,6 +1315,7 @@
         const middle = filtered[0]?.middle || "";
         const theme = themeFor(currentCategory);
         itemsEl.innerHTML = `
+          <div class="sticky-sentinel" aria-hidden="true"></div>
           <div class="single-major-banner" style="--major-color: ${theme.color}">
             <div class="major-name">${escapeHtml(currentCategory)}</div>
             <div class="middle-name">${escapeHtml(middle)}</div>
@@ -1261,6 +1329,7 @@
       const theme = themeFor(group.category);
       return `
         <section class="major-section" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
+          <div class="sticky-sentinel" aria-hidden="true"></div>
           <header class="major-header">
             <span class="major-name">${escapeHtml(group.category)}</span>
             <span class="middle-name">${escapeHtml(group.middle)}</span>
@@ -1481,9 +1550,27 @@
       showToast("保存済（すべて）");
     }
 
+    let stickyHeaderObservers = [];
+
+    function bindStickyMajorHeaders() {
+      stickyHeaderObservers.forEach(o => o.disconnect());
+      stickyHeaderObservers = [];
+      itemsEl.querySelectorAll(".sticky-sentinel").forEach(sentinel => {
+        const sticky = sentinel.nextElementSibling;
+        if (!sticky) return;
+        const obs = new IntersectionObserver(
+          ([entry]) => sticky.classList.toggle("is-stuck", entry.intersectionRatio < 1),
+          { threshold: [1] }
+        );
+        obs.observe(sentinel);
+        stickyHeaderObservers.push(obs);
+      });
+    }
+
     function renderAndBind() {
       render();
       bindAssessmentEvents();
+      bindStickyMajorHeaders();
     }
 
     gradeFilter.addEventListener("change", renderAndBind);
