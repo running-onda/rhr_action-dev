@@ -7,5 +7,7 @@ window.APP_ENV = {
   userNameKey: "rhr-guideline-dev-user-name",
   myGradeKey: "rhr-guideline-dev-my-grade",
   authSessionKey: "rhr_guideline_auth_dev_v2",
-  accessPasswordHash: "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b"
+  accessPasswordHash: "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b",
+  minutesKey: "rhr-guideline-dev-mtg-minutes",
+  openaiApiKey: ""
 };

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自己評価サマリー</title>
+  <script src="env.js"></script>
+  <script src="guideline-data.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style id="auth-critical">
+    [hidden] { display: none !important; }
+    body.is-locked { overflow: hidden; }
+    body.is-locked #appContent { display: none !important; }
+    body.is-locked #authGate {
+      display: flex !important;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: #f5f4f0;
+    }
+  </style>
+  <script>
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.documentElement.classList.add("auth-session-ok");
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --ink: #1a2744;
+      --ink-secondary: #4a5568;
+      --ink-muted: #8d959c;
+      --line: #e4e6e8;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+    .env-banner {
+      background: #fff8e6;
+      border-bottom: 1px solid #e6d9a8;
+      color: #7a5c00;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 16px;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .header-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-inner h1 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0.06em;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn:hover { border-color: var(--ink-muted); }
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+    .alert {
+      background: #fef3f2;
+      border: 1px solid #fecdca;
+      color: #b42318;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      font-size: 14px;
+    }
+    .summary-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: var(--ink-secondary);
+    }
+    .summary-meta strong { color: var(--ink); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 22px 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .chart-wrap {
+      max-width: 640px;
+      margin: 0 auto 8px;
+    }
+    .avg-scores {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px 32px;
+      justify-content: center;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .avg-scores .val {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
+    .avg-scores .lbl {
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-top: 4px;
+    }
+    .promo-scale-wrap {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .promo-scale-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+    .promo-marker {
+      position: absolute;
+      top: -8px;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .promo-marker-arrow {
+      display: block;
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .promo-marker-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .promo-tier-result {
+      text-align: center;
+      margin: 12px 0 0;
+      font-size: 14px;
+    }
+    .item-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .item-table th,
+    .item-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+    }
+    .item-table th {
+      font-size: 11px;
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+    .item-table .num {
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .cat-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .ai-area label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .ai-area textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .ai-area input[type="password"],
+    .ai-area input[type="file"] {
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .ai-commentary {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      min-height: 120px;
+    }
+    .ai-hint {
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-top: 8px;
+    }
+    .auth-gate {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .auth-card h2 { margin: 0 0 8px; font-size: 18px; }
+    .auth-card input {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .auth-submit {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="is-locked">
+  <script>
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.body.classList.remove("is-locked");
+    })();
+  </script>
+
+  <div id="authGate" class="auth-gate">
+    <div class="auth-card">
+      <h2>自己評価サマリー</h2>
+      <p style="font-size:13px;color:var(--ink-secondary);margin:0 0 16px;">パスワードを入力してください</p>
+      <form id="authForm">
+        <input id="authPassword" type="password" placeholder="パスワード" required />
+        <p id="authError" style="color:#b42318;font-size:12px;min-height:1.2em;"></p>
+        <button type="submit" class="auth-submit">入室する</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appContent" hidden>
+    <div id="envBanner" class="env-banner" hidden></div>
+    <header>
+      <div class="header-inner">
+        <h1>自己評価サマリー</h1>
+        <div class="header-actions">
+          <a id="backLink" href="index.html" class="btn">← 行動指針に戻る</a>
+          <button type="button" class="btn" id="logoutBtn">ログアウト</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div id="completionAlert" class="alert" hidden></div>
+
+      <div id="summaryMain" hidden>
+        <div class="summary-meta">
+          <span>氏名：<strong id="summaryUser"></strong></span>
+          <span>職級：<strong id="summaryGrade"></strong></span>
+        </div>
+
+        <section class="card">
+          <h2>中項目別レーダーチャート</h2>
+          <div class="chart-wrap">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>総合平均と判定</h2>
+          <div class="avg-scores">
+            <div>
+              <div class="val" id="avgScore10">—</div>
+              <div class="lbl">10段階平均</div>
+            </div>
+            <div>
+              <div class="val" id="avgScoreDisplay">—</div>
+              <div class="lbl">換算平均（判定用）</div>
+            </div>
+          </div>
+          <div id="promoScale"></div>
+        </section>
+
+        <section class="card">
+          <h2>小項目別の自己評価</h2>
+          <div style="overflow-x:auto;">
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th>大項目</th>
+                  <th>中項目</th>
+                  <th>小項目</th>
+                  <th>点数</th>
+                </tr>
+              </thead>
+              <tbody id="itemTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card ai-area">
+          <h2>AI分析コメント（約800文字）</h2>
+          <label for="minutesFile">評定MTG 議事録（テキストファイル）</label>
+          <input type="file" id="minutesFile" accept=".txt,.md,.text/plain" />
+          <label for="minutesText">議事録テキスト（貼り付け可）</label>
+          <textarea id="minutesText" placeholder="評定MTGの議事録を貼り付けるか、上でファイルを選択してください。"></textarea>
+          <label for="apiKeyInput">OpenAI APIキー（任意・入力時はAI生成、未入力時は自動テンプレート）</label>
+          <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off" />
+          <button type="button" class="btn btn-primary" id="generateBtn">分析を生成する</button>
+          <p class="ai-hint">APIキーはこのブラウザにのみ保存されます。議事録の内容は分析コメントに反映されます。</p>
+          <div id="aiCommentary" class="ai-commentary">「分析を生成する」を押すとコメントが表示されます。</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
+    const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
+
+    async function hashPassword(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function unlockApp() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.body.classList.remove("is-locked");
+      document.getElementById("authGate").hidden = true;
+      document.getElementById("appContent").hidden = false;
+      window.initInsights();
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      document.body.classList.add("is-locked");
+      document.getElementById("authGate").hidden = false;
+      document.getElementById("appContent").hidden = true;
+    }
+
+    document.getElementById("authForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const hash = await hashPassword(document.getElementById("authPassword").value);
+      const err = document.getElementById("authError");
+      if (hash === ACCESS_PASSWORD_HASH) {
+        err.textContent = "";
+        unlockApp();
+      } else {
+        err.textContent = "パスワードが違います。";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", lockApp);
+
+    if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+      unlockApp();
+    }
+  </script>
+  <script src="insights.js"></script>
+</body>
+</html>
