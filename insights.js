@@ -283,6 +283,30 @@ ${ctx.minutes || "（なし）"}`;
     `;
   }
 
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderItemTable(rows) {
+    const tbody = document.getElementById("itemTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = rows
+      .map(r => {
+        const theme = categoryTheme[r.category] || { color: "#5a6269" };
+        return `<tr>
+          <td><span class="cat-dot" style="background:${theme.color}"></span>${escapeHtml(r.category)}</td>
+          <td>${escapeHtml(r.middle)}</td>
+          <td>${escapeHtml(r.item)}</td>
+          <td class="num">${r.rating ? r.rating : "—"}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
   let uiBound = false;
   let lastStats = null;
   let lastCtx = null;
