@@ -1,5 +1,8 @@
 (function () {
-  const data = window.GUIDELINE_DATA;
+  function getData() {
+    return Array.isArray(window.GUIDELINE_DATA) ? window.GUIDELINE_DATA : [];
+  }
+
   const categoryTheme = {
     "アウトプット力": { color: "#6b9b7a", soft: "#eef4ef" },
     "考える力": { color: "#4a8f9c", soft: "#e8f2f4" },
@@ -19,10 +22,12 @@
     { name: "名球会", phase: "社会へ波及する" }
   ];
 
-  const STORAGE_KEY = window.APP_ENV.storageKey;
-  const USER_NAME_KEY = window.APP_ENV.userNameKey;
-  const MY_GRADE_KEY = window.APP_ENV.myGradeKey;
-  const MINUTES_KEY = window.APP_ENV.minutesKey || "rhr-guideline-mtg-minutes";
+  const ENV = window.APP_ENV || {};
+  const STORAGE_KEY = ENV.storageKey || "rhr-guideline-dev-assessment";
+  const STORAGE_KEY_PROD = "rhr-guideline-self-assessment";
+  const USER_NAME_KEY = ENV.userNameKey || "rhr-guideline-dev-user-name";
+  const MY_GRADE_KEY = ENV.myGradeKey || "rhr-guideline-dev-my-grade";
+  const MINUTES_KEY = ENV.minutesKey || "rhr-guideline-dev-mtg-minutes";
 
   function itemKey(d) {
     return `${d.category}::${d.item}`;
@@ -30,7 +35,8 @@
 
   function loadAssessments() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY_PROD) || "{}";
+      return JSON.parse(raw);
     } catch {
       return {};
     }
@@ -62,7 +68,7 @@
     const rows = [];
     const byMiddle = new Map();
 
-    data.forEach(d => {
+    getData().forEach(d => {
       const saved = assessments[itemKey(d)] || {};
       const rating = saved.selfRating ?? saved.rating ?? 0;
       rows.push({ ...d, rating });
@@ -90,7 +96,7 @@
       .sort((a, b) => a.category.localeCompare(b.category) || a.middle.localeCompare(b.middle));
 
     const rated = rows.filter(r => r.rating > 0);
-    const total = data.length;
+    const total = getData().length;
     const complete = rated.length === total;
     const avg10 = rated.length
       ? rated.reduce((s, r) => s + r.rating, 0) / rated.length
@@ -203,13 +209,24 @@ ${ctx.minutes || "（なし）"}`;
 
   function renderRadar(middleList) {
     const canvas = document.getElementById("radarChart");
-    if (!canvas || typeof Chart === "undefined") return;
+    const host = document.querySelector(".chart-wrap");
+    if (!canvas || !host) return;
+
+    if (typeof Chart === "undefined") {
+      host.insertAdjacentHTML(
+        "beforeend",
+        '<p class="chart-fallback">チャートを読み込めませんでした。ネット接続を確認して再読み込みしてください。</p>'
+      );
+      return;
+    }
 
     const labels = middleList.map(m => m.middle);
-    const values = middleList.map(m => m.avg10);
-    const colors = middleList.map(m => (categoryTheme[m.category] || {}).color || "#5a6269");
+    const values = middleList.map(m => Number(m.avg10.toFixed(2)));
 
-    if (radarChart) radarChart.destroy();
+    if (radarChart) {
+      radarChart.destroy();
+      radarChart = null;
+    }
 
     radarChart = new Chart(canvas, {
       type: "radar",
@@ -217,16 +234,15 @@ ${ctx.minutes || "（なし）"}`;
         labels,
         datasets: [
           {
-            label: "自己評価（10段階平均）",
+            label: "自己評価",
             data: values,
-            backgroundColor: "rgba(26, 39, 68, 0.12)",
+            backgroundColor: "rgba(26, 39, 68, 0.15)",
             borderColor: "#1a2744",
             borderWidth: 2,
-            pointBackgroundColor: colors,
+            pointBackgroundColor: "#1a2744",
             pointBorderColor: "#fff",
             pointBorderWidth: 1,
-            pointRadius: 5,
-            pointHoverRadius: 7
+            pointRadius: 4
           }
         ]
       },
@@ -237,31 +253,18 @@ ${ctx.minutes || "（なし）"}`;
           r: {
             min: 0,
             max: 10,
-            ticks: { stepSize: 2, backdropColor: "transparent" },
-            grid: { color: "rgba(26,39,68,0.08)" },
-            angleLines: { color: "rgba(26,39,68,0.1)" },
-            pointLabels: {
-              font: { size: 11, family: '"Noto Sans JP", sans-serif' },
-              color: "#1a2744"
-            }
+            ticks: { stepSize: 2 },
+            pointLabels: { font: { size: 10 } }
           }
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label(ctx) {
-                return ` ${ctx.parsed.r.toFixed(1)} 点`;
-              }
-            }
-          }
-        }
+        plugins: { legend: { display: false } }
       }
     });
   }
 
   function renderPromoScale(gradeIndex, displayScore) {
     const wrap = document.getElementById("promoScale");
+    if (!wrap) return;
     const isIkusei = gradeIndex === 0;
     const tier = isIkusei ? getIkuseiTier(displayScore) : getUpperTier(displayScore);
     const segments = isIkusei ? 2 : 5;
@@ -280,117 +283,173 @@ ${ctx.minutes || "（なし）"}`;
     `;
   }
 
-  function init() {
-    try {
-    document.title = (window.APP_ENV.title || "行動指針") + " — 自己評価サマリー";
-    const envBanner = document.getElementById("envBanner");
-    if (window.APP_ENV.id === "development" && envBanner) {
-      envBanner.textContent = "開発環境 — 自己評価サマリー";
-      envBanner.hidden = false;
-    }
+  let uiBound = false;
+  let lastStats = null;
+  let lastCtx = null;
 
-    const assessments = loadAssessments();
-    const userName = localStorage.getItem(USER_NAME_KEY) || "";
-    const rawGrade = localStorage.getItem(MY_GRADE_KEY);
-    const gradeIndex =
-      rawGrade === null || rawGrade === "" ? -1 : Number(rawGrade);
-    const gradeName =
-      gradeIndex >= 0 && grades[gradeIndex] ? `${grades[gradeIndex].name}` : "未設定";
-
-    document.getElementById("summaryUser").textContent = userName || "（氏名未設定）";
-    document.getElementById("summaryGrade").textContent = gradeName;
-
-    const stats = collectSelfRatings(assessments);
-    const alertEl = document.getElementById("completionAlert");
-    const mainEl = document.getElementById("summaryMain");
-
-    if (stats.rated.length === 0) {
-      alertEl.hidden = false;
-      alertEl.className = "alert";
-      alertEl.textContent =
-        "自己評価がまだありません。行動指針ページで10段階評価を入力し「保存する」を押してから、再度お越しください。";
-      mainEl.hidden = true;
-      return;
-    }
-
-    if (!stats.complete) {
-      alertEl.hidden = false;
-      alertEl.className = "alert alert-warn";
-      alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は行動指針ページで評価・保存してください。`;
-    } else {
-      alertEl.hidden = true;
-    }
-
-    mainEl.hidden = false;
-    mainEl.removeAttribute("hidden");
-
-    document.getElementById("avgScore10").textContent = stats.avg10.toFixed(2);
-    document.getElementById("avgScoreDisplay").textContent = stats.avgDisplay.toFixed(2);
-
-    const tier =
-      gradeIndex === 0
-        ? getIkuseiTier(stats.avgDisplay)
-        : getUpperTier(stats.avgDisplay);
-    renderPromoScale(gradeIndex, stats.avgDisplay);
-    if (stats.middleList.length) {
-      renderRadar(stats.middleList);
-    }
-    renderItemTable(stats.rows);
+  function bindUiOnce() {
+    if (uiBound) return;
+    uiBound = true;
 
     const minutesTa = document.getElementById("minutesText");
-    const savedMinutes = localStorage.getItem(MINUTES_KEY);
-    if (savedMinutes) minutesTa.value = savedMinutes;
-
     const apiKeyInput = document.getElementById("apiKeyInput");
+    const savedMinutes = localStorage.getItem(MINUTES_KEY);
+    if (savedMinutes && minutesTa) minutesTa.value = savedMinutes;
     const savedKey = localStorage.getItem("rhr-openai-api-key");
-    if (savedKey) apiKeyInput.value = savedKey;
+    if (savedKey && apiKeyInput) apiKeyInput.value = savedKey;
 
-    document.getElementById("minutesFile").addEventListener("change", async e => {
+    document.getElementById("minutesFile")?.addEventListener("change", async e => {
       const file = e.target.files?.[0];
-      if (!file) return;
+      if (!file || !minutesTa) return;
       const text = await file.text();
       minutesTa.value = text;
       localStorage.setItem(MINUTES_KEY, text);
     });
 
-    minutesTa.addEventListener("change", () => {
+    minutesTa?.addEventListener("change", () => {
       localStorage.setItem(MINUTES_KEY, minutesTa.value);
     });
 
-    apiKeyInput.addEventListener("change", () => {
+    apiKeyInput?.addEventListener("change", () => {
       localStorage.setItem("rhr-openai-api-key", apiKeyInput.value.trim());
     });
 
-    document.getElementById("generateBtn").addEventListener("click", async () => {
+    document.getElementById("generateBtn")?.addEventListener("click", async () => {
+      if (!lastStats || !lastCtx) return;
       const out = document.getElementById("aiCommentary");
       const btn = document.getElementById("generateBtn");
+      const minutesTaEl = document.getElementById("minutesText");
       btn.disabled = true;
       out.textContent = "分析を生成しています…";
-      localStorage.setItem(MINUTES_KEY, minutesTa.value);
+      localStorage.setItem(MINUTES_KEY, minutesTaEl?.value || "");
 
       const commentary = await generateCommentary({
-        userName,
-        gradeName,
-        avg10: stats.avg10,
-        avgDisplay: stats.avgDisplay,
-        tierLabel: tier.label,
-        middleList: stats.middleList,
-        minutes: minutesTa.value
+        ...lastCtx,
+        minutes: minutesTaEl?.value || ""
       });
 
       out.textContent = commentary;
       btn.disabled = false;
     });
-    } catch (err) {
-      console.error(err);
+  }
+
+  function showError(err) {
+    console.error(err);
+    const alertEl = document.getElementById("completionAlert");
+    const mainEl = document.getElementById("summaryMain");
+    if (alertEl) {
+      alertEl.hidden = false;
+      alertEl.className = "alert";
+      const detail = err && err.message ? `（${err.message}）` : "";
+      alertEl.textContent = `表示中にエラーが発生しました。ページを再読み込みしてください。${detail}`;
+    }
+    if (mainEl) mainEl.hidden = true;
+  }
+
+  function init() {
+    try {
+      if (!getData().length) {
+        const alertEl = document.getElementById("completionAlert");
+        if (alertEl) {
+          alertEl.hidden = false;
+          alertEl.className = "alert";
+          alertEl.textContent =
+            "行動指針データ（guideline-data.js）を読み込めません。index.html と同じフォルダに置いて再読み込みしてください。";
+        }
+        return;
+      }
+
+      document.title = (ENV.title || "行動指針") + " — 自己評価サマリー";
+      const envBanner = document.getElementById("envBanner");
+      if (ENV.id === "development" && envBanner) {
+        envBanner.textContent = "開発環境 — 自己評価サマリー";
+        envBanner.hidden = false;
+      }
+
+      const assessments = loadAssessments();
+      const userName =
+        localStorage.getItem(USER_NAME_KEY) ||
+        localStorage.getItem("rhr-guideline-user-name") ||
+        "";
+      const rawGrade =
+        localStorage.getItem(MY_GRADE_KEY) ??
+        localStorage.getItem("rhr-guideline-my-grade");
+      const gradeIndex =
+        rawGrade === null || rawGrade === "" ? -1 : Number(rawGrade);
+      const gradeName =
+        gradeIndex >= 0 && grades[gradeIndex] ? grades[gradeIndex].name : "未設定";
+
+      const summaryUser = document.getElementById("summaryUser");
+      const summaryGrade = document.getElementById("summaryGrade");
+      if (summaryUser) summaryUser.textContent = userName || "（氏名未設定）";
+      if (summaryGrade) summaryGrade.textContent = gradeName;
+
+      const stats = collectSelfRatings(assessments);
       const alertEl = document.getElementById("completionAlert");
       const mainEl = document.getElementById("summaryMain");
-      if (alertEl) {
-        alertEl.hidden = false;
-        alertEl.className = "alert";
-        alertEl.textContent = "表示中にエラーが発生しました。ページを再読み込みしてください。";
+
+      if (stats.rated.length === 0) {
+        if (alertEl) {
+          alertEl.hidden = false;
+          alertEl.className = "alert";
+          alertEl.textContent =
+            "自己評価がまだありません。行動指針ページ（index.html）で10段階評価を入力し「保存する」を押してから、再度お越しください。";
+        }
+        if (mainEl) mainEl.hidden = true;
+        return;
       }
-      if (mainEl) mainEl.hidden = true;
+
+      if (alertEl) {
+        if (!stats.complete) {
+          alertEl.hidden = false;
+          alertEl.className = "alert alert-warn";
+          alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は行動指針ページで評価・保存してください。`;
+        } else {
+          alertEl.hidden = true;
+        }
+      }
+
+      if (mainEl) {
+        mainEl.hidden = false;
+        mainEl.removeAttribute("hidden");
+      }
+
+      const avg10El = document.getElementById("avgScore10");
+      const avgDispEl = document.getElementById("avgScoreDisplay");
+      if (avg10El) avg10El.textContent = stats.avg10.toFixed(2);
+      if (avgDispEl) avgDispEl.textContent = stats.avgDisplay.toFixed(2);
+
+      const tier =
+        gradeIndex === 0
+          ? getIkuseiTier(stats.avgDisplay)
+          : getUpperTier(stats.avgDisplay);
+
+      renderPromoScale(gradeIndex, stats.avgDisplay);
+      renderItemTable(stats.rows);
+
+      lastStats = stats;
+      lastCtx = {
+        userName,
+        gradeName,
+        avg10: stats.avg10,
+        avgDisplay: stats.avgDisplay,
+        tierLabel: tier.label,
+        middleList: stats.middleList
+      };
+
+      bindUiOnce();
+
+      if (stats.middleList.length) {
+        requestAnimationFrame(() => {
+          try {
+            renderRadar(stats.middleList);
+          } catch (chartErr) {
+            console.error(chartErr);
+          }
+        });
+      }
+    } catch (err) {
+      showError(err);
     }
   }
 
