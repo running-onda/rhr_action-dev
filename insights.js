@@ -280,7 +280,9 @@ ${ctx.minutes || "（なし）"}`;
     `;
   }
 
-  リー";
+  function init() {
+    try {
+    document.title = (window.APP_ENV.title || "行動指針") + " — 自己評価サマリー";
     const envBanner = document.getElementById("envBanner");
     if (window.APP_ENV.id === "development" && envBanner) {
       envBanner.textContent = "開発環境 — 自己評価サマリー";
@@ -379,6 +381,17 @@ ${ctx.minutes || "（なし）"}`;
       out.textContent = commentary;
       btn.disabled = false;
     });
+    } catch (err) {
+      console.error(err);
+      const alertEl = document.getElementById("completionAlert");
+      const mainEl = document.getElementById("summaryMain");
+      if (alertEl) {
+        alertEl.hidden = false;
+        alertEl.className = "alert";
+        alertEl.textContent = "表示中にエラーが発生しました。ページを再読み込みしてください。";
+      }
+      if (mainEl) mainEl.hidden = true;
+    }
   }
 
   window.initInsights = init;
