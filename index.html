@@ -7,6 +7,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style id="auth-critical">
+    [hidden] { display: none !important; }
+    body.is-locked { overflow: hidden; }
+    body.is-locked #appContent { display: none !important; }
+    body.is-locked #authGate {
+      display: flex !important;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: #f5f4f0;
+    }
+  </style>
+  <script>
+    (function () {
+      var K = "rhr_guideline_auth_v2";
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.documentElement.classList.add("auth-session-ok");
+    })();
+  </script>
   <style>
     :root {
       --bg: #f5f4f0;
@@ -767,15 +786,21 @@
     }
 
     body.is-locked #authGate {
+      display: flex !important;
       position: fixed;
       inset: 0;
-      z-index: 10000;
+      z-index: 2147483647;
       min-height: 100vh;
       min-height: 100dvh;
     }
 
-    body:not(.is-locked) #authGate {
-      display: none;
+    body:not(.is-locked) #authGate,
+    html.auth-session-ok #authGate {
+      display: none !important;
+    }
+
+    html.auth-session-ok #appContent {
+      display: block !important;
     }
 
     .auth-gate {
@@ -877,6 +902,13 @@
   </style>
 </head>
 <body class="is-locked">
+  <script>
+    (function () {
+      var K = "rhr_guideline_auth_v2";
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.body.classList.remove("is-locked");
+    })();
+  </script>
   <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
     <div class="auth-card">
       <h2 id="authTitle">行動指針ビューア</h2>
@@ -941,7 +973,7 @@
   </div>
 
   <script>
-    const AUTH_SESSION_KEY = "rhr_guideline_auth_v1";
+    const AUTH_SESSION_KEY = "rhr_guideline_auth_v2";
     const ACCESS_PASSWORD_HASH = "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b";
 
     async function hashPassword(text) {
@@ -951,6 +983,7 @@
 
     function unlockApp() {
       sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.documentElement.classList.add("auth-session-ok");
       document.body.classList.remove("is-locked");
       const gate = document.getElementById("authGate");
       gate.hidden = true;
@@ -962,6 +995,8 @@
 
     function lockApp() {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem("rhr_guideline_auth_v1");
+      document.documentElement.classList.remove("auth-session-ok");
       document.body.classList.add("is-locked");
       const gate = document.getElementById("authGate");
       gate.hidden = false;
@@ -985,6 +1020,8 @@
         onUnlock();
         return;
       }
+
+      input.focus();
 
       form.addEventListener("submit", async e => {
         e.preventDefault();
