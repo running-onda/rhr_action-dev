@@ -240,7 +240,7 @@ const GUIDELINE_DATA = [
     ]
   },
   {
-    category: "怪力",
+    category: "快力",
     middle: "エネルギーの源泉",
     item: "内省力",
     concept: "発見",
@@ -256,7 +256,7 @@ const GUIDELINE_DATA = [
     ]
   },
   {
-    category: "怪力",
+    category: "快力",
     middle: "エネルギーの源泉",
     item: "衝動力",
     concept: "点火",
@@ -272,7 +272,7 @@ const GUIDELINE_DATA = [
     ]
   },
   {
-    category: "怪力",
+    category: "快力",
     middle: "エネルギーの源泉",
     item: "一貫力",
     concept: "覚悟",
