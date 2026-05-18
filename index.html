@@ -431,6 +431,17 @@
       transition: color 0.2s ease;
     }
 
+    .major-description {
+      margin: -8px 0 var(--space-lg);
+      padding: 16px 18px;
+      color: var(--ink-secondary);
+      font-size: 14px;
+      line-height: 1.9;
+      background: var(--major-soft, var(--surface));
+      border-left: 3px solid var(--major-color, var(--ink));
+      border-radius: var(--radius);
+    }
+
     .major-header.is-stuck,
     .single-major-banner.is-stuck {
       background: var(--major-color, var(--sage));
@@ -1175,6 +1186,15 @@
       "快力": { color: "#9b7a6b", soft: "#f4efec" }
     };
 
+    const categoryDescriptions = {
+      "アウトプット力": "知識や技術を持っているだけでなく、それを“価値”として世の中へ届けていく力です。ランニングホームランでは、ただ依頼をこなすのではなく、「その人らしさ」や「執着」が滲むアウトプットを大切にしています。探求し、表現し、最後までやり切る。その積み重ねが、人の感情や社会を少しずつ動かしていきます。",
+      "考える力": "目の前の要望をそのまま処理するのではなく、「本当は何が問題なんだろう？」を考え続ける力です。相手の言葉を丁寧に聞きながら、社会や業界、人の欲望まで視野を広げ、本質へ近づこうとします。感覚だけでも、理屈だけでもなく、その両方を行き来しながら、より良い答えを探していきます。",
+      "統治力": "感情や衝動に飲まれず、自分自身をうまく扱っていく力です。自分の強みや弱み、癖を理解しながら、状況に合わせて柔軟に変わり続けられるかが問われます。ランニングホームランでは、“熱”を否定しません。でも、その熱を暴走させるのではなく、自分でコントロールしながら前へ進めることを大切にしています。",
+      "共感力": "人を“役割”ではなく、一人の人間として理解しようとする力です。立場や背景、感情まで想像しながら向き合い、信頼や共創関係をつくっていきます。ランニングホームランでは、管理や上下関係よりも、「この人と一緒につくりたい」と思える関係性を大切にしています。人を信じ、共に前へ進める空気そのものが、大きな価値になります。",
+      "先導力": "正解が見えない状況でも、「こっちへ行こう」と意思を持って前へ進める力です。突破し、鼓舞し、空気を変えながら、人やチームを動かしていきます。ランニングホームランでは、ただ指示を出す人ではなく、自ら熱を持ち、挑戦する姿勢で周囲の空気を変えていける人を大切にしています。",
+      "快力": "自分の“快”や衝動を見つけ、それをエネルギーに変えながら、自分らしい世界観を育てていく力です。内省し、自分を突き動かすものを知り、そのコンセプトを覚悟を持って貫いていきます。ランニングホームランでは、コンセプトをつくるだけではなく、自分自身も“コンセプトを持って快的に生きるクリエイター”であることを大切にしています。"
+    };
+
     const data = window.GUIDELINE_DATA;
 
     const categoryGrid = document.getElementById("categoryGrid");
@@ -1299,7 +1319,7 @@
       categoryGrid.innerHTML = "";
       const allBtn = makeCategoryButton("すべて", "", currentCategory === "all", () => {
         currentCategory = "all";
-        render();
+        renderAndBind();
       });
       categoryGrid.appendChild(allBtn);
 
@@ -1307,7 +1327,7 @@
         const middle = data.find(d => d.category === cat)?.middle || "";
         const btn = makeCategoryButton(cat, middle, currentCategory === cat, () => {
           currentCategory = cat;
-          render();
+          renderAndBind();
         });
         categoryGrid.appendChild(btn);
       });
@@ -1353,13 +1373,22 @@
         const theme = themeFor(currentCategory);
         itemsEl.innerHTML = `
           <div class="sticky-sentinel" aria-hidden="true"></div>
-          <div class="single-major-banner" style="--major-color: ${theme.color}">
+          <div class="single-major-banner" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
             <div class="major-name">${escapeHtml(currentCategory)}</div>
             <div class="middle-name">${escapeHtml(middle)}</div>
           </div>
+          ${renderMajorDescription(currentCategory)}
           <div class="items">${filtered.map(d => renderItem(d, true)).join("")}</div>
         `;
       }
+    }
+
+    function renderMajorDescription(category) {
+      const text = categoryDescriptions[category];
+      const theme = themeFor(category);
+      return text
+        ? `<p class="major-description" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">${escapeHtml(text)}</p>`
+        : "";
     }
 
     function renderMajorSection(group) {
@@ -1371,6 +1400,7 @@
             <span class="major-name">${escapeHtml(group.category)}</span>
             <span class="middle-name">${escapeHtml(group.middle)}</span>
           </header>
+          ${renderMajorDescription(group.category)}
           <div class="items">
             ${group.items.map(d => renderItem(d, false)).join("")}
           </div>
