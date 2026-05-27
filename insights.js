@@ -42,8 +42,8 @@
     }
   }
 
-  function toDisplayScore(avg10) {
-    return Math.round(avg10 * 40) / 100;
+  function toDisplayScore(avg5) {
+    return Math.round(avg5 * 80) / 100;
   }
 
   function getUpperTier(score) {
@@ -139,11 +139,11 @@
     }
 
     const text = [
-      `${userName || "ユーザー"}さん（${gradeName}）の自己評価サマリーです。全項目の平均は10段階で ${avg10.toFixed(2)} 点（換算 ${avgDisplay.toFixed(2)} 点）で、判定は「${tierLabel}」ゾーンに該当します。`,
+      `${userName || "ユーザー"}さん（${gradeName}）の自己評価サマリーです。全項目の平均は5段階で ${avg10.toFixed(2)} 点（換算 ${avgDisplay.toFixed(2)} 点）で、判定は「${tierLabel}」ゾーンに該当します。`,
       `レーダーチャート上では、中項目ごとにばらつきがあり、特に力が出ている領域は ${topText} です。これらは日常業務において既に再現性のある強みとして機能している可能性が高く、チームへの展開や後輩への言語化によって組織資産へ昇華できるでしょう。`,
       `相対的に伸ばしどころとして目立つのは ${lowText} です。ここは単に点数を上げるのではなく、行動指針の「概念」と「説明」に立ち返り、どの場面でどの行動が不足していたかを具体化することが重要です。`,
       minutesBlock,
-      `総合すると、現時点の自己認識は${avg10 >= 7 ? "おおむね高水準" : avg10 >= 5 ? "標準的で改善余地あり" : "慎重な見立て"}にあり、次の評価期間では中項目ごとに「一つ上の職級のステップ文」を意識した行動実験を設定することを推奨します。MTGでは、強みの横展開と弱みの一点突破の両方を議題に置き、数値の根拠となったエピソードを短く共有すると、評価の納得感と納得感のある合意形成につながります。`
+      `総合すると、現時点の自己認識は${avg10 >= 3.5 ? "おおむね高水準" : avg10 >= 2.5 ? "標準的で改善余地あり" : "慎重な見立て"}にあり、次の評価期間では中項目ごとに「一つ上の職級のステップ文」を意識した行動実験を設定することを推奨します。MTGでは、強みの横展開と弱みの一点突破の両方を議題に置き、数値の根拠となったエピソードを短く共有すると、評価の納得感と納得感のある合意形成につながります。`
     ].join("\n\n");
 
     if (text.length > 820) return text.slice(0, 817) + "…";
@@ -171,7 +171,7 @@
     const prompt = `あなたは人事評価に詳しいコンサルタントです。以下の自己評価データと評定MTG議事録をもとに、日本語で800文字前後の分析コメントを書いてください。丁寧で具体的に。
 
 【対象者】${ctx.userName}（${ctx.gradeName}）
-【総合平均】10段階 ${ctx.avg10.toFixed(2)} 点 / 換算 ${ctx.avgDisplay.toFixed(2)} 点 / 判定 ${ctx.tierLabel}
+【総合平均】5段階 ${ctx.avg10.toFixed(2)} 点 / 換算 ${ctx.avgDisplay.toFixed(2)} 点 / 判定 ${ctx.tierLabel}
 【中項目別】
 ${middleSummary}
 
@@ -252,8 +252,8 @@ ${ctx.minutes || "（なし）"}`;
         scales: {
           r: {
             min: 0,
-            max: 10,
-            ticks: { stepSize: 2 },
+            max: 5,
+            ticks: { stepSize: 1 },
             pointLabels: { font: { size: 10 } }
           }
         },
@@ -301,7 +301,7 @@ ${ctx.minutes || "（なし）"}`;
           <td><span class="cat-dot" style="background:${theme.color}"></span>${escapeHtml(r.category)}</td>
           <td>${escapeHtml(r.middle)}</td>
           <td>${escapeHtml(r.item)}</td>
-          <td class="num">${r.rating ? r.rating : "—"}</td>
+          <td class="num">${r.rating ? (Number.isInteger(r.rating) ? r.rating : r.rating.toFixed(1)) : "—"}</td>
         </tr>`;
       })
       .join("");
@@ -417,7 +417,7 @@ ${ctx.minutes || "（なし）"}`;
           alertEl.hidden = false;
           alertEl.className = "alert";
           alertEl.textContent =
-            "自己評価がまだありません。行動指針ページ（index.html）で10段階評価を入力し「保存する」を押してから、再度お越しください。";
+            "自己評価がまだありません。行動指針ページ（index.html）で5段階評価を入力し「保存する」を押してから、再度お越しください。";
         }
         if (mainEl) mainEl.hidden = true;
         return;

@@ -619,9 +619,9 @@
     .rating-dots {
       display: flex;
       flex-wrap: nowrap;
-      align-items: flex-end;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 4px;
+      gap: 2px;
       position: relative;
       min-width: 0;
     }
@@ -641,15 +641,22 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       padding: 0;
       border: none;
       background: none;
       cursor: pointer;
       font-family: inherit;
+      flex: 1 1 0;
       min-width: 0;
+      max-width: 88px;
       position: relative;
       z-index: 1;
+    }
+
+    .rating-dot-half {
+      flex: 0 0 14px;
+      max-width: 14px;
     }
 
     .rating-dot .dot {
@@ -672,15 +679,16 @@
       box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.12);
     }
 
-    .rating-dot .num {
+    .rating-dot-caption {
       font-size: 9px;
-      line-height: 1;
+      line-height: 1.35;
       color: var(--ink-muted);
       font-weight: 500;
-      font-variant-numeric: tabular-nums;
+      text-align: center;
+      white-space: nowrap;
     }
 
-    .rating-dot.active .num {
+    .rating-dot.active .rating-dot-caption {
       color: var(--major-color, var(--ink));
       font-weight: 700;
     }
@@ -1397,13 +1405,30 @@
       `;
     }
 
+    const RATING_STEPS = [
+      { value: 1, caption: "1／まったくできてない" },
+      { value: 1.5, caption: null },
+      { value: 2, caption: "2／まだできてない" },
+      { value: 2.5, caption: null },
+      { value: 3, caption: "3／できている" },
+      { value: 3.5, caption: null },
+      { value: 4, caption: "4／よくできている" },
+      { value: 4.5, caption: null },
+      { value: 5, caption: "5／とてもよくできている" }
+    ];
+
     function renderRatingDots(rating) {
-      return Array.from({ length: 10 }, (_, n) => {
-        const v = n + 1;
-        const active = rating === v ? " active" : "";
-        return `<button type="button" class="rating-dot${active}" data-rating="${v}" aria-label="${v}点">
+      const selected = Number(rating) || 0;
+      return RATING_STEPS.map(step => {
+        const active = selected === step.value ? " active" : "";
+        const halfClass = step.caption ? "" : " rating-dot-half";
+        const captionHtml = step.caption
+          ? `<span class="rating-dot-caption">${escapeHtml(step.caption)}</span>`
+          : "";
+        const aria = step.caption || `${step.value}点`;
+        return `<button type="button" class="rating-dot${halfClass}${active}" data-rating="${step.value}" aria-label="${escapeHtml(aria)}">
           <span class="dot"></span>
-          <span class="num">${v}</span>
+          ${captionHtml}
         </button>`;
       }).join("");
     }
