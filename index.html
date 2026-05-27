@@ -680,17 +680,40 @@
     }
 
     .rating-dot-caption {
-      font-size: 9px;
-      line-height: 1.35;
-      color: var(--ink-muted);
-      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      width: 100%;
       text-align: center;
-      white-space: nowrap;
     }
 
-    .rating-dot.active .rating-dot-caption {
-      color: var(--major-color, var(--ink));
+    .rating-dot-num {
+      font-size: 10px;
+      line-height: 1.2;
       font-weight: 700;
+      color: var(--ink-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rating-dot-label {
+      font-size: 9px;
+      line-height: 1.35;
+      font-weight: 500;
+      color: var(--ink-muted);
+      white-space: normal;
+    }
+
+    .rating-dot.active .rating-dot-num,
+    .rating-dot.active .rating-dot-label {
+      color: var(--major-color, var(--ink));
+    }
+
+    .rating-dot-half::after {
+      content: "";
+      display: block;
+      width: 1px;
+      min-height: calc(10px * 1.2 + 2px + 9px * 1.35 * 2);
     }
 
     .eval-textarea {
@@ -1406,26 +1429,29 @@
     }
 
     const RATING_STEPS = [
-      { value: 1, caption: "1／まったくできてない" },
-      { value: 1.5, caption: null },
-      { value: 2, caption: "2／まだできてない" },
-      { value: 2.5, caption: null },
-      { value: 3, caption: "3／できている" },
-      { value: 3.5, caption: null },
-      { value: 4, caption: "4／よくできている" },
-      { value: 4.5, caption: null },
-      { value: 5, caption: "5／とてもよくできている" }
+      { value: 1, label: "まったくできてない" },
+      { value: 1.5, label: null },
+      { value: 2, label: "まだできてない" },
+      { value: 2.5, label: null },
+      { value: 3, label: "できている" },
+      { value: 3.5, label: null },
+      { value: 4, label: "よくできている" },
+      { value: 4.5, label: null },
+      { value: 5, label: "とてもよくできている" }
     ];
 
     function renderRatingDots(rating) {
       const selected = Number(rating) || 0;
       return RATING_STEPS.map(step => {
         const active = selected === step.value ? " active" : "";
-        const halfClass = step.caption ? "" : " rating-dot-half";
-        const captionHtml = step.caption
-          ? `<span class="rating-dot-caption">${escapeHtml(step.caption)}</span>`
+        const halfClass = step.label ? "" : " rating-dot-half";
+        const captionHtml = step.label
+          ? `<span class="rating-dot-caption">
+              <span class="rating-dot-num">${step.value}</span>
+              <span class="rating-dot-label">${escapeHtml(step.label)}</span>
+            </span>`
           : "";
-        const aria = step.caption || `${step.value}点`;
+        const aria = step.label ? `${step.value}点 ${step.label}` : `${step.value}点`;
         return `<button type="button" class="rating-dot${halfClass}${active}" data-rating="${step.value}" aria-label="${escapeHtml(aria)}">
           <span class="dot"></span>
           ${captionHtml}
