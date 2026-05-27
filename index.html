@@ -521,40 +521,6 @@
       margin: 0;
     }
 
-    .concept-tag {
-      display: inline-flex;
-      align-items: center;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--major-color, var(--teal));
-      background: var(--major-soft, var(--teal-soft));
-      padding: 5px 12px;
-      border-radius: 4px;
-      letter-spacing: 0.1em;
-      vertical-align: middle;
-      transform: translateY(-2px);
-    }
-
-    .item-breadcrumb {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--ink-muted);
-    }
-
-    .item-breadcrumb .tier-major {
-      font-weight: 600;
-      color: var(--major-color, var(--ink-secondary));
-    }
-
-    .item-breadcrumb .sep {
-      margin: 0 6px;
-      opacity: 0.5;
-    }
-
-    .item-breadcrumb .tier-middle {
-      color: var(--ink-secondary);
-    }
-
     .item-description {
       padding: var(--space-lg);
       background: linear-gradient(90deg, var(--major-soft, var(--navy-soft)) 0%, var(--surface) 24%);
@@ -1378,7 +1344,7 @@
             <div class="middle-name">${escapeHtml(middle)}</div>
           </div>
           ${renderMajorDescription(currentCategory)}
-          <div class="items">${filtered.map(d => renderItem(d, true)).join("")}</div>
+          <div class="items">${filtered.map(d => renderItem(d)).join("")}</div>
         `;
       }
     }
@@ -1402,33 +1368,23 @@
           </header>
           ${renderMajorDescription(group.category)}
           <div class="items">
-            ${group.items.map(d => renderItem(d, false)).join("")}
+            ${group.items.map(d => renderItem(d)).join("")}
           </div>
         </section>
       `;
     }
 
-    function renderItem(d, showBreadcrumb) {
+    function renderItem(d) {
       const theme = themeFor(d.category);
       const selectedGrade = gradeFilter.value;
       const stepIndexes = selectedGrade === "all" ? grades.map((_, i) => i) : [Number(selectedGrade)];
-
-      const breadcrumb = showBreadcrumb
-        ? `<div class="item-breadcrumb" style="--major-color: ${theme.color}">
-            <span class="tier-major">${escapeHtml(d.category)}</span>
-            <span class="sep">/</span>
-            <span class="tier-middle">${escapeHtml(d.middle)}</span>
-          </div>`
-        : "";
 
       return `
         <article class="item-card" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
           <div class="item-identity">
             <h3 class="item-title-row">
               <span class="item-name">${escapeHtml(d.item)}</span>
-              <span class="concept-tag">${escapeHtml(d.concept)}</span>
             </h3>
-            ${breadcrumb}
           </div>
           <div class="item-description">
             <p class="description-text">${escapeHtml(d.description)}</p>
