@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>項目一覧 — 行動指針</title>
+  <script src="env.js"></script>
+  <script src="guideline-data.js"></script>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --surface: #ffffff;
+      --ink: #1a2744;
+      --ink-secondary: #435066;
+      --ink-muted: #6a7280;
+      --line: rgba(26, 39, 68, 0.14);
+      --radius: 10px;
+      --space-lg: 18px;
+      --space-xl: 26px;
+      --gold: #c9a227;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:"DM Sans","Noto Sans JP",-apple-system,sans-serif; color:var(--ink); background:var(--bg); }
+    header { background:var(--bg); border-bottom:1px solid var(--line); }
+    .header-inner{ max-width:1280px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; }
+    .brand-block{ display:flex; align-items:center; gap:12px; flex-shrink:0; }
+    .brand-logo{ height:32px; width:auto; display:block; }
+    .brand-text h1{ margin:0; font-size:17px; font-weight:700; letter-spacing:.08em; white-space:nowrap; }
+    .header-toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-left:auto; }
+    .nav-links{ display:flex; gap:8px; flex-wrap:wrap; }
+    .nav-links a{ display:inline-flex; align-items:center; justify-content:center; height:34px; padding:0 12px; border-radius: var(--radius); font-size:12px; font-weight:700; letter-spacing:.04em; text-decoration:none; color:var(--ink-secondary); border:1px solid var(--line); background:var(--surface); }
+    .nav-links a.active{ background:var(--ink); border-color:var(--ink); color:#fff; }
+    .btn-ghost{ height:34px; padding:0 14px; border-radius: var(--radius); border:1px solid var(--ink-muted); background:transparent; color:var(--ink-secondary); font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-ghost:hover{ border-color:var(--ink); color:var(--ink); background:rgba(26,39,68,.04); }
+    main{ max-width:1280px; margin:0 auto; padding: var(--space-xl) 20px; }
+    .title{ margin:0 0 6px; font-size:22px; font-weight:800; letter-spacing:.04em; }
+    .sub{ margin:0 0 var(--space-lg); color:var(--ink-secondary); font-size:13px; line-height:1.7; }
+    .bar{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:12px; }
+    .search{
+      display:flex; gap:10px; align-items:center; flex:1 1 520px; min-width:260px;
+      background: var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    }
+    .search input{ flex:1 1 auto; border:none; outline:none; font-size:13px; font-family:inherit; background:transparent; }
+    .filters{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    select{
+      height:36px; padding:0 12px; font-size:13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font-family:inherit;
+    }
+    .btn{ height:36px; padding:0 14px; border-radius:10px; border:none; cursor:pointer; font-family:inherit; font-weight:700; }
+    .btn-primary{ background: var(--gold); color: var(--ink); }
+    .btn-primary:hover{ filter:brightness(1.05); }
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:#fafafa; font-weight:800; font-size:12px; }
+    .table-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    table{ width:100%; border-collapse:collapse; font-size:12px; }
+    th,td{ padding:10px 10px; border-bottom:1px solid rgba(26,39,68,.08); text-align:left; vertical-align:top; }
+    th{ color:var(--ink-muted); font-weight:800; letter-spacing:.06em; text-transform:uppercase; font-size:11px; }
+    tr:last-child td{ border-bottom:none; }
+    .steps{ color:var(--ink-secondary); font-size:12px; line-height:1.7; white-space:pre-wrap; }
+    .desc{ color:var(--ink-secondary); font-size:12px; line-height:1.7; white-space:pre-wrap; }
+    .toggle{ cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+
+    /* auth gate */
+    body.is-locked { overflow:hidden; height:100%; }
+    body.is-locked #appContent { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+    body.is-locked #authGate { display:flex !important; position:fixed; inset:0; z-index:2147483647; padding:24px; background:var(--bg); align-items:center; justify-content:center; }
+    body:not(.is-locked) #authGate, html.auth-session-ok #authGate { display:none !important; }
+    html.auth-session-ok #appContent { display:block !important; }
+    .auth-card{ width:100%; max-width:380px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:28px 24px 24px; box-shadow:0 8px 32px rgba(26,39,68,.06); }
+    .auth-card h2{ margin:0 0 6px; font-size:18px; font-weight:700; letter-spacing:.06em; }
+    .auth-card p{ margin:0 0 20px; font-size:13px; color:var(--ink-secondary); line-height:1.6; }
+    .auth-card label{ display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--ink); }
+    .auth-card input{ width:100%; padding:11px 12px; font-size:15px; border:1px solid var(--line); border-radius:8px; font-family:inherit; margin-bottom:12px; }
+    .auth-card input:focus{ border-color:var(--ink); outline:none; box-shadow:0 0 0 3px rgba(26,39,68,.08); }
+    .auth-error{ min-height:1.25em; font-size:12px; color:#b42318; margin-bottom:8px; }
+    .auth-submit{ width:100%; border:none; background:var(--ink); color:#fff; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .auth-submit:hover{ opacity:.92; }
+  </style>
+</head>
+<body class="is-locked">
+  <script>
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.body.classList.remove("is-locked");
+    })();
+  </script>
+
+  <div id="authGate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+    <div class="auth-card">
+      <h2 id="authTitle">項目一覧</h2>
+      <p>社内利用のため、共有パスワードを入力してください。</p>
+      <form id="authForm">
+        <label for="authPassword">パスワード</label>
+        <input id="authPassword" type="password" autocomplete="current-password" />
+        <div class="auth-error" id="authError" aria-live="polite"></div>
+        <button type="submit" class="auth-submit">入室する</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appContent" hidden inert aria-hidden="true">
+    <header>
+      <div class="header-inner">
+        <div class="brand-block">
+          <img class="brand-logo" src="assets/rhr-logo.png" alt="Running Home Run. Inc" />
+          <div class="brand-text"><h1>行動指針</h1></div>
+        </div>
+        <div class="header-toolbar">
+          <nav class="nav-links" aria-label="ページ">
+            <a href="top.html">TOP</a>
+            <a href="viewer.html">評価シート</a>
+            <a href="items.html" class="active">項目一覧</a>
+            <a href="admin.html">管理画面</a>
+          </nav>
+          <button type="button" class="btn-ghost" id="logoutBtn">ログアウト</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <h2 class="title">項目一覧</h2>
+      <p class="sub">行動指針（大項目/中項目/小項目/説明/職級別基準文）を一覧で確認できます。</p>
+
+      <div class="bar">
+        <div class="search">
+          <input id="q" type="text" placeholder="検索（大項目/中項目/小項目/説明/基準文）…" />
+          <span class="pill"><span id="count">0</span>件</span>
+        </div>
+        <div class="filters">
+          <select id="cat">
+            <option value="">全大項目</option>
+          </select>
+          <button type="button" class="btn btn-primary" id="toggleBtn">基準文を折りたたむ</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>大項目</th>
+              <th>中項目</th>
+              <th>小項目</th>
+              <th>説明</th>
+              <th>職級ごとの基準文</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script type="module" src="js/items-page.js"></script>
+  </div>
+
+  <script>
+    const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
+    const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
+
+    async function hashPassword(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function unlockApp() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.documentElement.classList.add("auth-session-ok");
+      document.body.classList.remove("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = true;
+      const app = document.getElementById("appContent");
+      app.hidden = false;
+      app.removeAttribute("inert");
+      app.removeAttribute("aria-hidden");
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem("rhr_guideline_auth_v1");
+      sessionStorage.removeItem("rhr_guideline_auth_v2");
+      document.documentElement.classList.remove("auth-session-ok");
+      document.body.classList.add("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = false;
+      const app = document.getElementById("appContent");
+      app.hidden = true;
+      app.setAttribute("inert", "");
+      app.setAttribute("aria-hidden", "true");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
+    }
+
+    function initAuthGate(onUnlock) {
+      const form = document.getElementById("authForm");
+      const input = document.getElementById("authPassword");
+      const errEl = document.getElementById("authError");
+
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+        unlockApp();
+        onUnlock();
+        return;
+      }
+
+      input.focus();
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        errEl.textContent = "";
+        const hash = await hashPassword(input.value);
+        if (hash === ACCESS_PASSWORD_HASH) {
+          unlockApp();
+          onUnlock();
+        } else {
+          errEl.textContent = "パスワードが違います。";
+          input.select();
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        lockApp();
+        input.focus();
+      });
+    }
+
+    initAuthGate(() => {});
+  </script>
+</body>
+</html>
+

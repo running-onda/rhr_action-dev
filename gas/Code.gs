@@ -33,6 +33,14 @@ function doGet(e) {
 
     let data;
     switch (action) {
+      case "createRoom":
+        data = createRoom_({
+          employeeName: body.employeeName,
+          managerName: body.managerName,
+          gradeIndex: Number(body.gradeIndex),
+          gradeName: body.gradeName
+        });
+        break;
       case "getAssessment":
         data = getAssessment_({ roomId: body.roomId });
         break;
