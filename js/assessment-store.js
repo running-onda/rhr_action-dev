@@ -17,6 +17,10 @@ export async function saveAssessment(input) {
   return await apiCall("saveAssessment", input);
 }
 
+export async function saveAssessmentBatch(roomId, rows) {
+  return await apiCall("saveAssessmentBatch", { roomId, rows });
+}
+
 export async function createRoom(input) {
   // input: { employeeName, gradeIndex, gradeName, managerName }
   return await apiCall("createRoom", input);

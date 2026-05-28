@@ -23,7 +23,7 @@
   </style>
   <script type="module">
     import { getRoomContext } from "./js/room.js";
-    import { getAssessment, saveAssessment, isApiEnabled } from "./js/assessment-store.js";
+    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled } from "./js/assessment-store.js";
     (function () {
       var K = window.APP_ENV.authSessionKey;
       if (sessionStorage.getItem(K) !== "1") return;
@@ -1661,15 +1661,63 @@
     function saveAllAssessments() {
       const doSaveAll = async () => {
         const blocks = [...itemsEl.querySelectorAll(".self-assess[data-assess-key]")];
+        const name = userNameInput.value.trim();
+        const now = new Date().toISOString();
+
+        // GASバッチ保存（roomあり & API設定あり）
+        if (roomId && apiEnabled) {
+          const rows = [];
+          for (const block of blocks) {
+            const key = block.dataset.assessKey;
+            const d = dataIndexByKey[key];
+            if (!d) continue;
+            const data = readAssessFromBlock(block);
+
+            if (String(role) === "manager") {
+              (data.supervisors || []).forEach((sup, i) => {
+                rows.push({
+                  itemKey: key,
+                  category: d.category,
+                  middle: d.middle,
+                  item: d.item,
+                  evaluatorRole: "manager",
+                  supervisorIndex: i,
+                  supervisorName: sup.name || "",
+                  rating: Number(sup.rating || 0),
+                  comment: sup.comment || ""
+                });
+              });
+            } else {
+              rows.push({
+                itemKey: key,
+                category: d.category,
+                middle: d.middle,
+                item: d.item,
+                evaluatorRole: "employee",
+                supervisorIndex: 0,
+                supervisorName: "",
+                rating: Number(data.selfRating || 0),
+                comment: data.selfComment || ""
+              });
+            }
+
+            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+            markBlockSaved(block, now);
+          }
+
+          await saveAssessmentBatch(roomId, rows);
+          showToast("保存済（すべて）");
+          return;
+        }
+
+        // フォールバック: localStorage
         for (const block of blocks) {
           const key = block.dataset.assessKey;
-          // saveItemAssessment 内で GAS / local の分岐と toast が出る
-          await new Promise(resolve => {
-            saveItemAssessment(key, block);
-            // GAS保存は内部で await するが、ここでは簡易に待ちを入れる
-            setTimeout(resolve, 10);
-          });
+          const data = readAssessFromBlock(block);
+          assessments[key] = { ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+          markBlockSaved(block, now);
         }
+        saveAssessmentsLocal();
         showToast("保存済（すべて）");
       };
       doSaveAll().catch(err => alert("一括保存に失敗しました: " + (err?.message || String(err))));

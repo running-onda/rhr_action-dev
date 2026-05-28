@@ -77,6 +77,8 @@ function doPost(e) {
         return jsonOk_(createRoom_(body));
       case "saveAssessment":
         return jsonOk_(saveAssessment_(body));
+      case "saveAssessmentBatch":
+        return jsonOk_(saveAssessmentBatch_(body));
       case "getAssessment":
         return jsonOk_(getAssessment_(body));
       case "getRooms":
@@ -186,6 +188,64 @@ function saveAssessment_(body) {
   touchRoomUpdatedAt_(roomId, now);
 
   return { roomId: roomId, itemKey: itemKey, updatedAt: now.toISOString() };
+}
+
+function saveAssessmentBatch_(body) {
+  const roomId = String(body.roomId || "").trim();
+  const rows = Array.isArray(body.rows) ? body.rows : [];
+  if (!roomId) throw new Error("VALIDATION_ERROR: roomId");
+  if (!rows.length) throw new Error("VALIDATION_ERROR: rows");
+
+  const ss = getSs_();
+  const sh = ss.getSheetByName(SHEET_ASSESSMENTS);
+  const now = new Date();
+
+  // Build map pk -> rowIndex for quick upsert
+  const values = sh.getDataRange().getValues();
+  const pkToRow = new Map();
+  for (let i = 1; i < values.length; i++) {
+    const pk = String(values[i][0] || "");
+    if (pk) pkToRow.set(pk, i + 1);
+  }
+
+  const updated = [];
+  rows.forEach(r => {
+    const itemKey = String(r.itemKey || "").trim();
+    const category = String(r.category || "").trim();
+    const middle = String(r.middle || "").trim();
+    const item = String(r.item || "").trim();
+    const evaluatorRole = String(r.evaluatorRole || "").trim();
+    const supervisorIndex = Number(r.supervisorIndex || 0);
+    const supervisorName = String(r.supervisorName || "").trim();
+    const rating = Number(r.rating || 0);
+    const comment = String(r.comment || "");
+
+    if (!itemKey || !evaluatorRole || !Number.isFinite(supervisorIndex) || !Number.isFinite(rating)) return;
+
+    const pk = compositeKey_(roomId, itemKey, evaluatorRole, supervisorIndex);
+    const row = [
+      pk,
+      roomId,
+      itemKey,
+      category,
+      middle,
+      item,
+      evaluatorRole,
+      supervisorIndex,
+      supervisorName,
+      rating,
+      comment,
+      now
+    ];
+
+    const rowIdx = pkToRow.get(pk);
+    if (rowIdx) sh.getRange(rowIdx, 1, 1, row.length).setValues([row]);
+    else sh.appendRow(row);
+    updated.push({ itemKey, evaluatorRole, supervisorIndex });
+  });
+
+  touchRoomUpdatedAt_(roomId, now);
+  return { roomId, updatedCount: updated.length, updatedAt: now.toISOString() };
 }
 
 function getAssessment_(body) {

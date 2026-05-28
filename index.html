@@ -6,6 +6,15 @@
   <title>行動指針ビューア</title>
   <script src="env.js"></script>
   <script src="guideline-data.js"></script>
+  <script>
+    // Entry point for GitHub Pages: move users to TOP (room creation).
+    // Keep the legacy viewer at viewer.html
+    (function () {
+      if (location.pathname.endsWith("/index.html") || location.pathname.endsWith("/")) {
+        location.replace("top.html");
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
