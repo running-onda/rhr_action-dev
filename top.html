@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TOP — 行動指針ビューア</title>
+  <script src="env.js"></script>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --surface: #ffffff;
+      --ink: #1a2744;
+      --ink-secondary: #435066;
+      --ink-muted: #6a7280;
+      --line: rgba(26, 39, 68, 0.14);
+      --radius: 10px;
+      --space-sm: 10px;
+      --space-md: 14px;
+      --space-lg: 18px;
+      --space-xl: 26px;
+      --gold: #c9a227;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", "Noto Sans JP", -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 16px;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .header-toolbar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-left: auto;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+
+    .nav-links a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      color: var(--ink-secondary);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      white-space: nowrap;
+    }
+
+    .nav-links a.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-header-ghost {
+      background: transparent;
+      color: var(--ink-secondary);
+      border: 1px solid var(--ink-muted);
+    }
+
+    .btn-header-ghost:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+      background: rgba(26, 39, 68, 0.04);
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: var(--space-xl) 20px;
+    }
+
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .page-sub {
+      margin: 0 0 var(--space-lg);
+      color: var(--ink-secondary);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .notice {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: #fff8e6;
+      border-radius: 10px;
+      color: #7a5c00;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: var(--space-lg);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 8px 24px rgba(26, 39, 68, 0.05);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+    }
+
+    input[type="text"], select {
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      min-width: 0;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.1);
+    }
+
+    .btn-primary:hover { filter: brightness(1.05); }
+
+    .btn-secondary {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.12);
+    }
+
+    .btn-secondary:hover { opacity: 0.92; }
+
+    .result {
+      margin-top: 14px;
+      padding: 12px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: #fafafa;
+      font-size: 12px;
+      color: var(--ink-secondary);
+    }
+
+    .result .urlrow {
+      display: grid;
+      grid-template-columns: 110px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .btn-copy {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      font-family: inherit;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .table th, .table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(26, 39, 68, 0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th {
+      color: var(--ink-muted);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .table a {
+      color: var(--ink);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* auth gate (same as index.html) */
+    body.is-locked {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    body.is-locked #appContent {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.is-locked #authGate {
+      display: flex !important;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body:not(.is-locked) #authGate,
+    html.auth-session-ok #authGate {
+      display: none !important;
+    }
+
+    html.auth-session-ok #appContent {
+      display: block !important;
+    }
+
+    .auth-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.06);
+    }
+
+    .auth-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .auth-card p {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      line-height: 1.6;
+    }
+
+    .auth-card label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .auth-card input[type="password"] {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .auth-card input[type="password"]:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .auth-error {
+      min-height: 1.25em;
+      font-size: 12px;
+      color: #b42318;
+      margin-bottom: 8px;
+    }
+
+    .auth-submit {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .auth-submit:hover { opacity: 0.92; }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .field { grid-template-columns: 1fr; }
+      .result .urlrow { grid-template-columns: 1fr; }
+      .header-inner { flex-wrap: wrap; }
+      .header-toolbar { flex-wrap: wrap; justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body class="is-locked">
+  <script>
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.body.classList.remove("is-locked");
+    })();
+  </script>
+
+  <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+    <div class="auth-card">
+      <h2 id="authTitle">行動指針ビューア</h2>
+      <p>社内利用のため、共有パスワードを入力してください。</p>
+      <form id="authForm">
+        <label for="authPassword">パスワード</label>
+        <input id="authPassword" type="password" autocomplete="current-password" />
+        <div class="auth-error" id="authError" aria-live="polite"></div>
+        <button type="submit" class="auth-submit">入室する</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appContent" hidden inert aria-hidden="true">
+    <header>
+      <div class="header-inner">
+        <div class="brand-block">
+          <img class="brand-logo" src="assets/rhr-logo.png" alt="Running Home Run. Inc" />
+          <div class="brand-text"><h1>行動指針</h1></div>
+        </div>
+        <div class="header-toolbar">
+          <nav class="nav-links" aria-label="ページ">
+            <a href="top.html" class="active">TOP</a>
+            <a href="viewer.html">評価シート</a>
+            <a href="items.html">項目一覧</a>
+            <a href="admin.html">管理画面</a>
+          </nav>
+          <button type="button" class="btn-header btn-header-ghost" id="logoutBtn">ログアウト</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <h2 class="page-title">評定ルーム作成</h2>
+      <p class="page-sub">社員用URLと上司用URLを発行し、同じ roomId に対して評価を保存します（GAS + スプレッドシート）。</p>
+
+      <div class="notice" id="apiNotice" hidden>GAS API が未設定です。`env.js` の `apiUrl` / `apiToken` を設定してください。</div>
+
+      <div class="grid">
+        <section class="card">
+          <h2>ルーム作成</h2>
+          <div class="field">
+            <label for="employeeName">社員名</label>
+            <input id="employeeName" type="text" placeholder="例）山田 太郎" />
+          </div>
+          <div class="field">
+            <label for="gradeSelect">職級</label>
+            <select id="gradeSelect"></select>
+          </div>
+          <div class="field">
+            <label for="managerName">上司名</label>
+            <input id="managerName" type="text" placeholder="例）佐藤 花子" />
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-header btn-primary" id="createRoomBtn">ルーム作成</button>
+            <button type="button" class="btn-header btn-secondary" id="refreshBtn">一覧更新</button>
+          </div>
+
+          <div class="result" id="createResult" hidden>
+            <div><strong>roomId</strong>: <span class="mono" id="roomIdOut">—</span></div>
+            <div class="urlrow">
+              <div><strong>社員用URL</strong></div>
+              <div class="mono" id="employeeUrlOut">—</div>
+              <button type="button" class="btn-copy" data-copy-from="employeeUrlOut">コピー</button>
+            </div>
+            <div class="urlrow">
+              <div><strong>上司用URL</strong></div>
+              <div class="mono" id="managerUrlOut">—</div>
+              <button type="button" class="btn-copy" data-copy-from="managerUrlOut">コピー</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>作成済みルーム一覧</h2>
+          <table class="table" aria-label="rooms">
+            <thead>
+              <tr>
+                <th>社員名</th>
+                <th>職級</th>
+                <th>roomId</th>
+                <th>更新</th>
+                <th>リンク</th>
+              </tr>
+            </thead>
+            <tbody id="roomsBody"></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="js/top-page.js"></script>
+  </div>
+
+  <script>
+    const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
+    const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
+
+    async function hashPassword(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function unlockApp() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.documentElement.classList.add("auth-session-ok");
+      document.body.classList.remove("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = true;
+      const app = document.getElementById("appContent");
+      app.hidden = false;
+      app.removeAttribute("inert");
+      app.removeAttribute("aria-hidden");
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem("rhr_guideline_auth_v1");
+      sessionStorage.removeItem("rhr_guideline_auth_v2");
+      document.documentElement.classList.remove("auth-session-ok");
+      document.body.classList.add("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = false;
+      const app = document.getElementById("appContent");
+      app.hidden = true;
+      app.setAttribute("inert", "");
+      app.setAttribute("aria-hidden", "true");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
+    }
+
+    function initAuthGate(onUnlock) {
+      const form = document.getElementById("authForm");
+      const input = document.getElementById("authPassword");
+      const errEl = document.getElementById("authError");
+
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+        unlockApp();
+        onUnlock();
+        return;
+      }
+
+      input.focus();
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        errEl.textContent = "";
+        const hash = await hashPassword(input.value);
+        if (hash === ACCESS_PASSWORD_HASH) {
+          unlockApp();
+          onUnlock();
+        } else {
+          errEl.textContent = "パスワードが違います。";
+          input.select();
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        lockApp();
+        input.focus();
+      });
+    }
+
+    initAuthGate(() => {});
+  </script>
+</body>
+</html>
+
