@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>評価シート — 行動指針</title>
+  <script src="env.js"></script>
+  <script src="guideline-data.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style id="auth-critical">
+    [hidden] { display: none !important; }
+    body.is-locked { overflow: hidden; }
+    body.is-locked #appContent { display: none !important; }
+    body.is-locked #authGate {
+      display: flex !important;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      background: #f5f4f0;
+    }
+  </style>
+  <script type="module">
+    import { getRoomContext } from "./js/room.js";
+    import { getAssessment, saveAssessment, isApiEnabled } from "./js/assessment-store.js";
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.documentElement.classList.add("auth-session-ok");
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --ink: #1a2744;
+      --ink-secondary: #4a5568;
+      --ink-muted: #8d959c;
+      --line: #e4e6e8;
+      --gold: #c9a227;
+      --navy-soft: #eef1f6;
+      --navy-highlight: #e4eaf3;
+      --sage: #6b9b7a;
+      --teal: #4a8f9c;
+      --coral: #d4846a;
+      --sage-soft: #eef4ef;
+      --teal-soft: #e8f2f4;
+      --coral-soft: #faf0ec;
+      --radius: 6px;
+      --space-xs: 6px;
+      --space-sm: 12px;
+      --space-md: 20px;
+      --space-lg: 32px;
+      --space-xl: 48px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "DM Sans", "Noto Sans JP", -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 16px;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      height: 32px;
+      width: auto;
+      display: block;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .header-toolbar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-left: auto;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .header-fields {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      min-width: 0;
+    }
+
+    .header-toolbar select,
+    .header-toolbar input {
+      min-width: 0;
+    }
+
+    .toolbar-group input,
+    .toolbar-group select {
+      height: 34px;
+      padding: 0 10px;
+      font-size: 12px;
+      line-height: 1.2;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+    }
+
+    .toolbar-group input:focus,
+    .toolbar-group select:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-header-secondary {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.12);
+    }
+
+    .btn-header-secondary:hover {
+      opacity: 0.92;
+    }
+
+    .btn-header-primary {
+      background: var(--gold);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(26, 39, 68, 0.1);
+    }
+
+    .btn-header-primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn-header-ghost {
+      background: transparent;
+      color: var(--ink-secondary);
+      border: 1px solid var(--ink-muted);
+    }
+
+    .btn-header-ghost:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+      background: rgba(26, 39, 68, 0.04);
+    }
+
+    .header-actions .save-toast {
+      align-self: center;
+    }
+
+    .guideline-intro {
+      margin: 0 0 var(--space-lg);
+      padding: var(--space-md) var(--space-lg);
+      font-size: 14px;
+      line-height: 1.9;
+      color: var(--ink-secondary);
+      background: var(--surface);
+      border-left: 3px solid var(--ink);
+      border-radius: var(--radius);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      align-items: center;
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .toolbar-group label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+    }
+
+    .save-toast {
+      font-size: 12px;
+      color: var(--sage);
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.3s;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: transparent;
+    }
+
+    .save-toast.visible {
+      opacity: 1;
+      background: #eef4ef;
+      border: 1px solid #6b9b7a;
+    }
+
+    .save-status {
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: auto;
+      letter-spacing: 0.04em;
+    }
+
+    .save-status.saved {
+      color: #3d7a52;
+    }
+
+    .save-status.unsaved {
+      color: var(--ink-muted);
+    }
+
+    #userName {
+      width: 116px;
+    }
+
+    #myGradeSelect {
+      width: 124px;
+    }
+
+    #gradeFilter {
+      width: 132px;
+    }
+
+    select, input, textarea, button {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 9px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      min-width: 160px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--teal);
+    }
+
+    textarea {
+      width: 100%;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-lg) var(--space-lg) var(--space-xl);
+    }
+
+    /* —— 大項目ナビ（1行） —— */
+    .category-nav {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 5px;
+      margin-bottom: var(--space-lg);
+      width: 100%;
+    }
+
+    .category-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 8px 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      text-align: center;
+      line-height: 1.2;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .category-btn:hover {
+      border-color: var(--ink-muted);
+      color: var(--ink);
+    }
+
+    .category-btn.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .category-btn .cat-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.8;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .category-btn.active .cat-label {
+      opacity: 0.7;
+    }
+
+    /* —— 大項目グループ（すべて表示時） —— */
+    .major-section {
+      margin-bottom: var(--space-xl);
+    }
+
+    .major-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .sticky-sentinel {
+      height: 1px;
+      margin: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .major-header,
+    .single-major-banner {
+      transition: background 0.2s ease, padding 0.2s ease, color 0.2s ease;
+    }
+
+    .major-header {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+      padding: 14px 0 12px;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      background: var(--bg);
+    }
+
+    .major-header .major-name {
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--major-color, var(--ink));
+      line-height: 1.15;
+      transition: color 0.2s ease;
+    }
+
+    .major-header .middle-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-secondary);
+      letter-spacing: 0.02em;
+      transition: color 0.2s ease;
+    }
+
+    .major-description {
+      margin: -8px 0 var(--space-lg);
+      padding: 16px 18px;
+      color: var(--ink-secondary);
+      font-size: 14px;
+      line-height: 1.9;
+      background: var(--major-soft, var(--surface));
+      border-left: 3px solid var(--major-color, var(--ink));
+      border-radius: var(--radius);
+    }
+
+    .major-header.is-stuck,
+    .single-major-banner.is-stuck {
+      background: var(--major-color, var(--sage));
+      padding: 12px 20px;
+      margin-bottom: var(--space-lg);
+    }
+
+    .major-header.is-stuck .major-name,
+    .single-major-banner.is-stuck .major-name {
+      color: #e4e6e8;
+    }
+
+    .major-header.is-stuck .middle-name,
+    .single-major-banner.is-stuck .middle-name {
+      color: #c5cad1;
+    }
+
+    /* —— 単一大項目表示時のヘッダ —— */
+    .single-major-banner {
+      margin-bottom: var(--space-lg);
+      padding: 14px 0 12px;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      background: var(--bg);
+    }
+
+    .single-major-banner .major-name {
+      font-size: clamp(30px, 4.5vw, 40px);
+      font-weight: 700;
+      color: var(--major-color, var(--ink));
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+      transition: color 0.2s ease;
+    }
+
+    .single-major-banner .middle-name {
+      font-size: 15px;
+      color: var(--ink-secondary);
+      margin-top: 6px;
+      transition: color 0.2s ease;
+    }
+
+    /* —— 小項目カード —— */
+    .items {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    .item-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .item-identity {
+      padding: var(--space-lg) var(--space-lg) var(--space-md);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .item-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      margin: 0;
+    }
+
+    .item-name {
+      font-size: clamp(28px, 4vw, 36px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .item-description {
+      padding: var(--space-lg);
+      background: linear-gradient(90deg, var(--major-soft, var(--navy-soft)) 0%, var(--surface) 24%);
+      border-left: 4px solid var(--major-color, var(--ink));
+      border-bottom: 1px solid var(--line);
+    }
+
+    .description-text {
+      font-size: 16px;
+      line-height: 1.85;
+      color: var(--ink);
+      font-weight: 500;
+      margin: 0;
+      max-width: 72ch;
+    }
+
+    /* —— 昇級ステップ —— */
+    .steps {
+      display: grid;
+      gap: 0;
+    }
+
+    .step {
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 140px 120px 1fr;
+      gap: var(--space-md);
+      align-items: start;
+    }
+
+    .step:last-child {
+      border-bottom: none;
+    }
+
+    .step.highlight {
+      background: var(--navy-highlight);
+    }
+
+    .step.highlight .grade-name {
+      color: var(--ink);
+    }
+
+    .grade-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .phase-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--major-color, var(--teal));
+      line-height: 1.4;
+    }
+
+    .step-body {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    /* —— 評価コメント —— */
+    .self-assess {
+      padding: 20px 24px 22px;
+      background: linear-gradient(160deg, #f4f6fa 0%, #fff 50%, #fafbfc 100%);
+      border-top: 1px solid rgba(26, 39, 68, 0.06);
+    }
+
+    .eval-block {
+      margin-bottom: 16px;
+    }
+
+    .eval-block:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .eval-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .rating-dots-wrap {
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .rating-dots {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 2px;
+      position: relative;
+      min-width: 0;
+    }
+
+    .rating-dots::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      top: 6px;
+      height: 1px;
+      background: var(--line);
+      z-index: 0;
+    }
+
+    .rating-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 88px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .rating-dot-half {
+      flex: 0 0 14px;
+      max-width: 14px;
+    }
+
+    .rating-dot .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #c5cad1;
+      background: var(--surface);
+      transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+
+    .rating-dot:hover .dot {
+      border-color: var(--major-color, var(--ink));
+      transform: scale(1.15);
+    }
+
+    .rating-dot.active .dot {
+      background: var(--major-color, var(--ink));
+      border-color: var(--major-color, var(--ink));
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.12);
+    }
+
+    .rating-dot-caption {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .rating-dot-num {
+      font-size: 10px;
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--ink-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rating-dot-label {
+      font-size: 9px;
+      line-height: 1.35;
+      font-weight: 500;
+      color: var(--ink-muted);
+      white-space: normal;
+    }
+
+    .rating-dot.active .rating-dot-num,
+    .rating-dot.active .rating-dot-label {
+      color: var(--major-color, var(--ink));
+    }
+
+    .rating-dot-half::after {
+      content: "";
+      display: block;
+      width: 1px;
+      min-height: calc(10px * 1.2 + 2px + 9px * 1.35 * 2);
+    }
+
+    .eval-textarea {
+      width: 100%;
+      min-height: 88px;
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.65;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .eval-textarea:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+      outline: none;
+    }
+
+    .supervisors-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .supervisor-block {
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .supervisor-block-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+      margin-bottom: 10px;
+    }
+
+    .supervisor-block-head .eval-label {
+      margin: 0;
+      flex: 1 1 auto;
+    }
+
+    .supervisor-name {
+      flex: 1 1 160px;
+      min-width: 120px;
+      max-width: 220px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+
+    .btn-remove-supervisor {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+
+    .btn-remove-supervisor:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .btn-add-supervisor {
+      margin-top: 12px;
+      border: 1px dashed var(--ink-muted);
+      background: transparent;
+      color: var(--ink-secondary);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .btn-add-supervisor:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+      background: var(--navy-soft);
+    }
+
+    .assess-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .btn-save-item {
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .btn-save-item:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 900px) {
+      .step {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+      }
+    }
+
+    .empty {
+      padding: var(--space-xl);
+      text-align: center;
+      color: var(--ink-muted);
+      font-size: 14px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    @media (max-width: 900px) {
+      .header-inner {
+        flex-direction: column;
+        align-items: stretch;
+        flex-wrap: wrap;
+      }
+
+      .header-toolbar {
+        margin-left: 0;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .header-fields,
+      .header-actions {
+        flex-wrap: wrap;
+      }
+
+      .toolbar-group {
+        gap: 4px;
+      }
+
+      .toolbar-group label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        border: 0;
+      }
+
+      #userName, #myGradeSelect, #gradeFilter {
+        flex: 1 1 100px;
+        width: auto;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .header-inner { padding: 10px 14px; }
+      main { padding: var(--space-md); }
+      .self-assess { padding: 18px 16px; }
+    }
+
+    body.is-locked {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    body.is-locked #appContent {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.is-locked #authGate {
+      display: flex !important;
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body:not(.is-locked) #authGate,
+    html.auth-session-ok #authGate {
+      display: none !important;
+    }
+
+    html.auth-session-ok #appContent {
+      display: block !important;
+    }
+
+    .auth-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.06);
+    }
+
+    .auth-card h2 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .auth-card p {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      line-height: 1.6;
+    }
+
+    .auth-card label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .auth-card input[type="password"] {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .auth-card input[type="password"]:focus {
+      border-color: var(--ink);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+    }
+
+    .auth-error {
+      min-height: 1.25em;
+      font-size: 12px;
+      color: #b42318;
+      margin-bottom: 8px;
+    }
+
+    .auth-submit {
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .auth-submit:hover {
+      opacity: 0.92;
+    }
+
+    .env-banner {
+      background: #fff8e6;
+      border-bottom: 1px solid #e6d9a8;
+      color: #7a5c00;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 16px;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body class="is-locked">
+  <script>
+    (function () {
+      var K = window.APP_ENV.authSessionKey;
+      if (sessionStorage.getItem(K) !== "1") return;
+      document.body.classList.remove("is-locked");
+    })();
+  </script>
+  <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+    <div class="auth-card">
+      <h2 id="authTitle">行動指針ビューア</h2>
+      <p>社内利用のため、共有パスワードを入力してください。</p>
+      <form id="authForm">
+        <label for="authPassword">パスワード</label>
+        <input id="authPassword" type="password" autocomplete="current-password" required />
+        <p id="authError" class="auth-error" aria-live="polite"></p>
+        <button type="submit" class="auth-submit">入室する</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appContent" hidden inert aria-hidden="true">
+  <div id="envBanner" class="env-banner" hidden></div>
+  <header>
+    <div class="header-inner">
+      <div class="brand-block">
+        <img class="brand-logo" src="assets/rhr-logo.png" alt="Running Home Run. Inc" />
+        <div class="brand-text">
+          <h1>行動指針</h1>
+        </div>
+      </div>
+      <div class="header-toolbar">
+        <div class="header-fields">
+        <div class="toolbar-group">
+          <label for="userName">氏名</label>
+          <input id="userName" type="text" placeholder="名前を入力" autocomplete="name" />
+        </div>
+        <div class="toolbar-group">
+          <label for="myGradeSelect">自分の職級</label>
+          <select id="myGradeSelect">
+            <option value="">未設定</option>
+          </select>
+        </div>
+        <div class="toolbar-group">
+          <label for="gradeFilter">表示する職級</label>
+          <select id="gradeFilter">
+            <option value="all">全職級を表示</option>
+          </select>
+        </div>
+        </div>
+        <div class="header-actions">
+          <a href="top.html" class="btn-header btn-header-ghost">TOP</a>
+          <a href="items.html" class="btn-header btn-header-ghost">項目一覧</a>
+          <a href="admin.html" class="btn-header btn-header-ghost">管理画面</a>
+          <a href="insights.html" class="btn-header btn-header-secondary">評価サマリー</a>
+          <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
+          <button type="button" class="btn-header btn-header-ghost" id="logoutBtn">ログアウト</button>
+          <span class="save-toast" id="saveToast" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p class="guideline-intro">ランニングホームランの行動指針は、「何ができるか」だけではなく、「どう在るか」「どう進化していくか」を示す、人間成長の地図です。知識や技術だけでなく、熱量、欲望、覚悟、人との向き合い方まで含めて、一人ひとりが自分らしい勝ち方を見つけ、やがて周囲や社会へ影響を広げていくことを目指しています。</p>
+
+    <nav id="categoryGrid" class="category-nav" aria-label="大項目"></nav>
+
+    <div id="items"></div>
+  </main>
+  </div>
+
+  <script>
+    const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
+    const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
+
+    async function hashPassword(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function unlockApp() {
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.documentElement.classList.add("auth-session-ok");
+      document.body.classList.remove("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = true;
+      const app = document.getElementById("appContent");
+      app.hidden = false;
+      app.removeAttribute("inert");
+      app.removeAttribute("aria-hidden");
+    }
+
+    function lockApp() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      sessionStorage.removeItem("rhr_guideline_auth_v1");
+      sessionStorage.removeItem("rhr_guideline_auth_v2");
+      document.documentElement.classList.remove("auth-session-ok");
+      document.body.classList.add("is-locked");
+      const gate = document.getElementById("authGate");
+      gate.hidden = false;
+      const app = document.getElementById("appContent");
+      app.hidden = true;
+      app.setAttribute("inert", "");
+      app.setAttribute("aria-hidden", "true");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
+      const items = document.getElementById("items");
+      if (items) items.innerHTML = "";
+    }
+
+    function initAuthGate(onUnlock) {
+      const form = document.getElementById("authForm");
+      const input = document.getElementById("authPassword");
+      const errEl = document.getElementById("authError");
+
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+        unlockApp();
+        onUnlock();
+        return;
+      }
+
+      input.focus();
+
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        errEl.textContent = "";
+        const hash = await hashPassword(input.value);
+        if (hash === ACCESS_PASSWORD_HASH) {
+          unlockApp();
+          onUnlock();
+        } else {
+          errEl.textContent = "パスワードが違います。";
+          input.select();
+        }
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        lockApp();
+        input.focus();
+      });
+    }
+
+    const grades = [
+      { name: "育成選手", phase: "知る" },
+      { name: "ファーム", phase: "試す" },
+      { name: "スタメン", phase: "成果化する" },
+      { name: "キャプテン", phase: "他者を巻き込む" },
+      { name: "選手権監督", phase: "勝ち方を描く" },
+      { name: "監督", phase: "組織を文化にする" },
+      { name: "名球会", phase: "社会へ波及する" }
+    ];
+
+    const categoryTheme = {
+      "アウトプット力": { color: "#6b9b7a", soft: "#eef4ef" },
+      "考える力": { color: "#4a8f9c", soft: "#e8f2f4" },
+      "統治力": { color: "#7a8f6b", soft: "#f0f3ec" },
+      "共感力": { color: "#6b8f9b", soft: "#ecf2f4" },
+      "先導力": { color: "#d4846a", soft: "#faf0ec" },
+      "快力": { color: "#9b7a6b", soft: "#f4efec" }
+    };
+
+    const categoryDescriptions = {
+      "アウトプット力": "知識や技術を持っているだけでなく、それを“価値”として世の中へ届けていく力です。ランニングホームランでは、ただ依頼をこなすのではなく、「その人らしさ」や「執着」が滲むアウトプットを大切にしています。探求し、表現し、最後までやり切る。その積み重ねが、人の感情や社会を少しずつ動かしていきます。",
+      "考える力": "目の前の要望をそのまま処理するのではなく、「本当は何が問題なんだろう？」を考え続ける力です。相手の言葉を丁寧に聞きながら、社会や業界、人の欲望まで視野を広げ、本質へ近づこうとします。感覚だけでも、理屈だけでもなく、その両方を行き来しながら、より良い答えを探していきます。",
+      "統治力": "感情や衝動に飲まれず、自分自身をうまく扱っていく力です。自分の強みや弱み、癖を理解しながら、状況に合わせて柔軟に変わり続けられるかが問われます。ランニングホームランでは、“熱”を否定しません。でも、その熱を暴走させるのではなく、自分でコントロールしながら前へ進めることを大切にしています。",
+      "共感力": "人を“役割”ではなく、一人の人間として理解しようとする力です。立場や背景、感情まで想像しながら向き合い、信頼や共創関係をつくっていきます。ランニングホームランでは、管理や上下関係よりも、「この人と一緒につくりたい」と思える関係性を大切にしています。人を信じ、共に前へ進める空気そのものが、大きな価値になります。",
+      "先導力": "正解が見えない状況でも、「こっちへ行こう」と意思を持って前へ進める力です。突破し、鼓舞し、空気を変えながら、人やチームを動かしていきます。ランニングホームランでは、ただ指示を出す人ではなく、自ら熱を持ち、挑戦する姿勢で周囲の空気を変えていける人を大切にしています。",
+      "快力": "自分の“快”や衝動を見つけ、それをエネルギーに変えながら、自分らしい世界観を育てていく力です。内省し、自分を突き動かすものを知り、そのコンセプトを覚悟を持って貫いていきます。ランニングホームランでは、コンセプトをつくるだけではなく、自分自身も“コンセプトを持って快的に生きるクリエイター”であることを大切にしています。"
+    };
+
+    const data = window.GUIDELINE_DATA;
+
+    const categoryGrid = document.getElementById("categoryGrid");
+    const itemsEl = document.getElementById("items");
+    const gradeFilter = document.getElementById("gradeFilter");
+    const myGradeSelect = document.getElementById("myGradeSelect");
+    const userNameInput = document.getElementById("userName");
+    const saveAllBtn = document.getElementById("saveAllBtn");
+    const saveToast = document.getElementById("saveToast");
+
+    const STORAGE_KEY = window.APP_ENV.storageKey;
+    const USER_NAME_KEY = window.APP_ENV.userNameKey;
+    const MY_GRADE_KEY = window.APP_ENV.myGradeKey;
+
+    const { roomId, role } = getRoomContext();
+    const apiEnabled = isApiEnabled();
+
+    document.title = (window.APP_ENV.title || "行動指針ビューア") + " — 評価シート";
+    const envBanner = document.getElementById("envBanner");
+    if (window.APP_ENV.id === "development" && envBanner) {
+      envBanner.textContent = "開発環境 — ここでの入力データは本番（社内公開版）とは別に保存されます";
+      envBanner.hidden = false;
+    }
+
+    let currentCategory = "all";
+    let assessments = {};
+    let roomMeta = null;
+
+    function loadAssessmentsLocal() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function saveAssessmentsLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(assessments));
+    }
+
+    function itemKey(d) {
+      return `${d.category}::${d.item}`;
+    }
+
+    function showToast(msg) {
+      saveToast.textContent = msg;
+      saveToast.classList.add("visible");
+      clearTimeout(showToast._t);
+      saveToast._t = setTimeout(() => saveToast.classList.remove("visible"), 3500);
+    }
+
+    function formatSavedAt(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      } catch {
+        return "";
+      }
+    }
+
+    function renderSaveStatus(saved) {
+      if (saved?.updatedAt) {
+        const when = formatSavedAt(saved.updatedAt);
+        return `<span class="save-status saved">保存済${when ? `（${when}）` : ""}</span>`;
+      }
+      return `<span class="save-status unsaved">未保存</span>`;
+    }
+
+    function markBlockSaved(block, iso) {
+      const actions = block.querySelector(".assess-actions");
+      if (!actions) return;
+      let el = actions.querySelector(".save-status");
+      const when = formatSavedAt(iso);
+      const text = `保存済${when ? `（${when}）` : ""}`;
+      if (!el) {
+        el = document.createElement("span");
+        el.className = "save-status saved";
+        actions.insertBefore(el, actions.firstChild);
+      }
+      el.className = "save-status saved";
+      el.textContent = text;
+    }
+
+    grades.forEach((g, i) => {
+      const label = `${g.name}｜${g.phase}`;
+      const optView = document.createElement("option");
+      optView.value = String(i);
+      optView.textContent = label;
+      gradeFilter.appendChild(optView);
+
+      const optMine = document.createElement("option");
+      optMine.value = String(i);
+      optMine.textContent = label;
+      myGradeSelect.appendChild(optMine);
+    });
+
+    const savedName = localStorage.getItem(USER_NAME_KEY);
+    if (savedName) userNameInput.value = savedName;
+
+    const savedMyGrade = localStorage.getItem(MY_GRADE_KEY);
+    if (savedMyGrade !== null && savedMyGrade !== "") {
+      myGradeSelect.value = savedMyGrade;
+    }
+
+    function getMyGradeIndex() {
+      const v = myGradeSelect.value;
+      return v === "" ? -1 : Number(v);
+    }
+
+    const categories = [...new Set(data.map(d => d.category))];
+
+    function themeFor(cat) {
+      return categoryTheme[cat] || { color: "#5a6269", soft: "#f0f0ee" };
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderCategories() {
+      categoryGrid.innerHTML = "";
+      const allBtn = makeCategoryButton("すべて", "", currentCategory === "all", () => {
+        currentCategory = "all";
+        renderAndBind();
+      });
+      categoryGrid.appendChild(allBtn);
+
+      categories.forEach(cat => {
+        const middle = data.find(d => d.category === cat)?.middle || "";
+        const btn = makeCategoryButton(cat, middle, currentCategory === cat, () => {
+          currentCategory = cat;
+          renderAndBind();
+        });
+        categoryGrid.appendChild(btn);
+      });
+    }
+
+    function makeCategoryButton(title, sub, active, onClick) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `category-btn ${active ? "active" : ""}`;
+      btn.innerHTML = sub
+        ? `${escapeHtml(title)}<span class="cat-label">${escapeHtml(sub)}</span>`
+        : escapeHtml(title);
+      btn.addEventListener("click", onClick);
+      return btn;
+    }
+
+    function groupByCategory(items) {
+      const map = new Map();
+      categories.forEach(cat => map.set(cat, []));
+      items.forEach(d => {
+        if (map.has(d.category)) map.get(d.category).push(d);
+      });
+      return categories
+        .filter(cat => map.get(cat).length > 0)
+        .map(cat => ({ category: cat, middle: map.get(cat)[0].middle, items: map.get(cat) }));
+    }
+
+    function render() {
+      renderCategories();
+
+      let filtered = data.filter(d => currentCategory === "all" || d.category === currentCategory);
+
+      if (!filtered.length) {
+        itemsEl.innerHTML = `<div class="empty">該当する項目がありません。</div>`;
+        return;
+      }
+
+      if (currentCategory === "all") {
+        const groups = groupByCategory(filtered);
+        itemsEl.innerHTML = groups.map(g => renderMajorSection(g)).join("");
+      } else {
+        const middle = filtered[0]?.middle || "";
+        const theme = themeFor(currentCategory);
+        itemsEl.innerHTML = `
+          <div class="sticky-sentinel" aria-hidden="true"></div>
+          <div class="single-major-banner" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
+            <div class="major-name">${escapeHtml(currentCategory)}</div>
+            <div class="middle-name">${escapeHtml(middle)}</div>
+          </div>
+          ${renderMajorDescription(currentCategory)}
+          <div class="items">${filtered.map(d => renderItem(d)).join("")}</div>
+        `;
+      }
+    }
+
+    function renderMajorDescription(category) {
+      const text = categoryDescriptions[category];
+      const theme = themeFor(category);
+      return text
+        ? `<p class="major-description" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">${escapeHtml(text)}</p>`
+        : "";
+    }
+
+    function renderMajorSection(group) {
+      const theme = themeFor(group.category);
+      return `
+        <section class="major-section" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
+          <div class="sticky-sentinel" aria-hidden="true"></div>
+          <header class="major-header">
+            <span class="major-name">${escapeHtml(group.category)}</span>
+            <span class="middle-name">${escapeHtml(group.middle)}</span>
+          </header>
+          ${renderMajorDescription(group.category)}
+          <div class="items">
+            ${group.items.map(d => renderItem(d)).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderItem(d) {
+      const theme = themeFor(d.category);
+      const selectedGrade = gradeFilter.value;
+      const stepIndexes = selectedGrade === "all" ? grades.map((_, i) => i) : [Number(selectedGrade)];
+
+      return `
+        <article class="item-card" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
+          <div class="item-identity">
+            <h3 class="item-title-row">
+              <span class="item-name">${escapeHtml(d.item)}</span>
+            </h3>
+          </div>
+          <div class="item-description">
+            <p class="description-text">${escapeHtml(d.description)}</p>
+          </div>
+          <div class="steps">
+            ${stepIndexes.map(i => renderStep(i, d.steps[i], theme)).join("")}
+          </div>
+          ${renderSelfAssess(itemKey(d), assessments[itemKey(d)] || {})}
+        </article>
+      `;
+    }
+
+    const RATING_STEPS = [
+      { value: 1, label: "まったくできてない" },
+      { value: 1.5, label: null },
+      { value: 2, label: "まだできてない" },
+      { value: 2.5, label: null },
+      { value: 3, label: "できている" },
+      { value: 3.5, label: null },
+      { value: 4, label: "よくできている" },
+      { value: 4.5, label: null },
+      { value: 5, label: "とてもよくできている" }
+    ];
+
+    function renderRatingDots(rating) {
+      const selected = Number(rating) || 0;
+      return RATING_STEPS.map(step => {
+        const active = selected === step.value ? " active" : "";
+        const halfClass = step.label ? "" : " rating-dot-half";
+        const captionHtml = step.label
+          ? `<span class="rating-dot-caption">
+              <span class="rating-dot-num">${step.value}</span>
+              <span class="rating-dot-label">${escapeHtml(step.label)}</span>
+            </span>`
+          : "";
+        const aria = step.label ? `${step.value}点 ${step.label}` : `${step.value}点`;
+        return `<button type="button" class="rating-dot${halfClass}${active}" data-rating="${step.value}" aria-label="${escapeHtml(aria)}">
+          <span class="dot"></span>
+          ${captionHtml}
+        </button>`;
+      }).join("");
+    }
+
+    function normalizeSupervisors(saved) {
+      if (Array.isArray(saved.supervisors) && saved.supervisors.length) {
+        return saved.supervisors.map(s => ({
+          name: s.name || "",
+          rating: s.rating || 0,
+          comment: s.comment || ""
+        }));
+      }
+      return [{ name: "", rating: 0, comment: "" }];
+    }
+
+    function renderSupervisorBlock(sup, index) {
+      const canRemove = index > 0;
+      return `
+        <div class="supervisor-block" data-supervisor-index="${index}">
+          <div class="supervisor-block-head">
+            <span class="eval-label">上司評価・コメント</span>
+            <input type="text" class="supervisor-name" placeholder="上司の名前" value="${escapeHtml(sup.name)}" />
+            ${canRemove ? `<button type="button" class="btn-remove-supervisor" aria-label="この上司を削除">×</button>` : ""}
+          </div>
+          <div class="rating-dots-wrap">
+            <div class="rating-dots">${renderRatingDots(sup.rating || 0)}</div>
+          </div>
+          <textarea class="eval-textarea supervisor-comment" placeholder="評価の理由・コメントを記入">${escapeHtml(sup.comment)}</textarea>
+        </div>
+      `;
+    }
+
+    function renderSelfAssess(key, saved) {
+      const selfRating = saved.selfRating ?? saved.rating ?? 0;
+      const selfComment = saved.selfComment ?? saved.comment ?? "";
+      const supervisors = normalizeSupervisors(saved);
+
+      return `
+        <div class="self-assess" data-assess-key="${escapeHtml(key)}">
+          <div class="eval-block eval-self">
+            <label class="eval-label">本人評価・コメント</label>
+            <div class="rating-dots-wrap">
+              <div class="rating-dots">${renderRatingDots(selfRating)}</div>
+            </div>
+            <textarea class="eval-textarea self-comment" placeholder="評価の理由・コメントを記入">${escapeHtml(selfComment)}</textarea>
+          </div>
+          <div class="supervisors-list">
+            ${supervisors.map((sup, i) => renderSupervisorBlock(sup, i)).join("")}
+          </div>
+          <button type="button" class="btn-add-supervisor">＋ 上司を追加</button>
+          <div class="assess-actions">
+            ${renderSaveStatus(saved)}
+            <button type="button" class="btn-save-item assess-save">保存する</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function readRatingFromDots(dotsEl) {
+      const active = dotsEl?.querySelector(".rating-dot.active");
+      return active ? Number(active.dataset.rating) : 0;
+    }
+
+    function readAssessFromBlock(block) {
+      return {
+        selfRating: readRatingFromDots(block.querySelector(".eval-self .rating-dots")),
+        selfComment: block.querySelector(".self-comment")?.value.trim() || "",
+        supervisors: [...block.querySelectorAll(".supervisor-block")].map(el => ({
+          name: el.querySelector(".supervisor-name")?.value.trim() || "",
+          rating: readRatingFromDots(el.querySelector(".rating-dots")),
+          comment: el.querySelector(".supervisor-comment")?.value.trim() || ""
+        }))
+      };
+    }
+
+    function renderStep(i, text, theme) {
+      const g = grades[i];
+      const isMine = getMyGradeIndex() === i;
+      return `
+        <section class="step ${isMine ? "highlight" : ""}" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
+          <div>
+            <div class="grade-name">${escapeHtml(g.name)}</div>
+          </div>
+          <div>
+            <div class="phase-name">${escapeHtml(g.phase)}</div>
+          </div>
+          <div>
+            <p class="step-body">${escapeHtml(text)}</p>
+          </div>
+        </section>
+      `;
+    }
+
+    function bindAssessmentEvents() {
+      itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
+        const key = block.dataset.assessKey;
+
+        block.querySelector(".assess-save")?.addEventListener("click", () => {
+          saveItemAssessment(key, block);
+        });
+
+        block.querySelectorAll(".rating-dots").forEach(dotsEl => {
+          dotsEl.querySelectorAll(".rating-dot").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const v = Number(btn.dataset.rating);
+              dotsEl.querySelectorAll(".rating-dot").forEach(b => {
+                b.classList.toggle("active", Number(b.dataset.rating) === v);
+              });
+            });
+          });
+        });
+
+        block.querySelector(".btn-add-supervisor")?.addEventListener("click", () => {
+          const current = readAssessFromBlock(block);
+          assessments[key] = { ...(assessments[key] || {}), ...current };
+          assessments[key].supervisors.push({ name: "", rating: 0, comment: "" });
+          saveAssessmentsLocal();
+          renderAndBind();
+        });
+
+        block.querySelectorAll(".btn-remove-supervisor").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const row = btn.closest(".supervisor-block");
+            const idx = Number(row?.dataset.supervisorIndex);
+            const current = readAssessFromBlock(block);
+            if (current.supervisors.length <= 1) return;
+            current.supervisors.splice(idx, 1);
+            assessments[key] = { ...(assessments[key] || {}), ...current };
+            saveAssessmentsLocal();
+            renderAndBind();
+          });
+        });
+      });
+    }
+
+    function saveItemAssessment(key, block) {
+      const doSave = async () => {
+        const name = userNameInput.value.trim();
+        const data = readAssessFromBlock(block);
+        const now = new Date().toISOString();
+
+        // GAS保存（roomあり & API設定あり）
+        if (roomId && apiEnabled) {
+          const d = dataIndexByKey[key];
+          if (!d) throw new Error("ITEM_NOT_FOUND");
+
+          if (String(role) === "manager") {
+            for (let i = 0; i < (data.supervisors || []).length; i++) {
+              const sup = data.supervisors[i];
+              await saveAssessment({
+                roomId,
+                itemKey: key,
+                category: d.category,
+                middle: d.middle,
+                item: d.item,
+                evaluatorRole: "manager",
+                supervisorIndex: i,
+                supervisorName: sup.name || "",
+                rating: Number(sup.rating || 0),
+                comment: sup.comment || ""
+              });
+            }
+          } else {
+            await saveAssessment({
+              roomId,
+              itemKey: key,
+              category: d.category,
+              middle: d.middle,
+              item: d.item,
+              evaluatorRole: "employee",
+              supervisorIndex: 0,
+              supervisorName: "",
+              rating: Number(data.selfRating || 0),
+              comment: data.selfComment || ""
+            });
+          }
+
+          assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+          markBlockSaved(block, now);
+          showToast("保存済");
+          return;
+        }
+
+        // フォールバック: localStorage
+        if (name) localStorage.setItem(USER_NAME_KEY, name);
+        assessments[key] = { ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+        saveAssessmentsLocal();
+        markBlockSaved(block, now);
+        showToast("保存済");
+      };
+
+      doSave().catch(err => alert("保存に失敗しました: " + (err?.message || String(err))));
+    }
+
+    function saveAllAssessments() {
+      const doSaveAll = async () => {
+        const blocks = [...itemsEl.querySelectorAll(".self-assess[data-assess-key]")];
+        for (const block of blocks) {
+          const key = block.dataset.assessKey;
+          // saveItemAssessment 内で GAS / local の分岐と toast が出る
+          await new Promise(resolve => {
+            saveItemAssessment(key, block);
+            // GAS保存は内部で await するが、ここでは簡易に待ちを入れる
+            setTimeout(resolve, 10);
+          });
+        }
+        showToast("保存済（すべて）");
+      };
+      doSaveAll().catch(err => alert("一括保存に失敗しました: " + (err?.message || String(err))));
+    }
+
+    let stickyHeaderObservers = [];
+
+    function bindStickyMajorHeaders() {
+      stickyHeaderObservers.forEach(o => o.disconnect());
+      stickyHeaderObservers = [];
+      itemsEl.querySelectorAll(".sticky-sentinel").forEach(sentinel => {
+        const sticky = sentinel.nextElementSibling;
+        if (!sticky) return;
+        const obs = new IntersectionObserver(
+          ([entry]) => sticky.classList.toggle("is-stuck", entry.intersectionRatio < 1),
+          { threshold: [1] }
+        );
+        obs.observe(sentinel);
+        stickyHeaderObservers.push(obs);
+      });
+    }
+
+    function renderAndBind() {
+      render();
+      bindAssessmentEvents();
+      bindStickyMajorHeaders();
+    }
+
+    gradeFilter.addEventListener("change", renderAndBind);
+    myGradeSelect.addEventListener("change", () => {
+      if (!roomId) localStorage.setItem(MY_GRADE_KEY, myGradeSelect.value);
+      renderAndBind();
+    });
+    userNameInput.addEventListener("change", () => {
+      if (!roomId) localStorage.setItem(USER_NAME_KEY, userNameInput.value.trim());
+    });
+    saveAllBtn.addEventListener("click", () => {
+      if (!roomId) localStorage.setItem(USER_NAME_KEY, userNameInput.value.trim());
+      saveAllAssessments();
+    });
+
+    const dataIndexByKey = Object.fromEntries((window.GUIDELINE_DATA || []).map(d => [`${d.category}::${d.item}`, d]));
+
+    function applyRoleUi() {
+      if (!roomId) return;
+      const r = String(role || "");
+      if (r === "manager") {
+        // self read-only
+        itemsEl.querySelectorAll(".eval-self textarea, .eval-self .rating-dot").forEach(el => {
+          el.setAttribute("disabled", "true");
+        });
+      } else {
+        // supervisors read-only
+        itemsEl.querySelectorAll(".supervisors-list textarea, .supervisors-list input, .supervisors-list .rating-dot").forEach(el => {
+          el.setAttribute("disabled", "true");
+        });
+        itemsEl.querySelectorAll(".btn-add-supervisor, .btn-remove-supervisor").forEach(el => (el.style.display = "none"));
+      }
+    }
+
+    async function initRoomAndRender() {
+      if (roomId && apiEnabled) {
+        const res = await getAssessment(roomId);
+        roomMeta = res.room || null;
+        assessments = res.assessments || {};
+        if (roomMeta) {
+          userNameInput.value = roomMeta.employeeName || "";
+          userNameInput.disabled = true;
+          myGradeSelect.value = String(Number(roomMeta.gradeIndex || 0));
+          myGradeSelect.disabled = true;
+        }
+      } else {
+        assessments = loadAssessmentsLocal();
+      }
+      renderAndBind();
+      applyRoleUi();
+    }
+
+    initAuthGate(() => initRoomAndRender());
+  </script>
+</body>
+</html>
