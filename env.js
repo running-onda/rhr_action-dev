@@ -9,5 +9,11 @@ window.APP_ENV = {
   authSessionKey: "rhr_guideline_auth_dev_v2",
   accessPasswordHash: "69349d0cdf7c997ff04732def28eb6ecaa21ab9a3cb2d3e2b6315258c043cb0b",
   minutesKey: "rhr-guideline-dev-mtg-minutes",
-  openaiApiKey: ""
+  openaiApiKey: "",
+
+  // Google Apps Script Web App
+  // - apiUrl: GAS のデプロイURL（/exec）
+  // - apiToken: GAS 側（スクリプトプロパティ）と一致させる
+  apiUrl: "",
+  apiToken: ""
 };
