@@ -14,6 +14,6 @@ window.APP_ENV = {
   // Google Apps Script Web App
   // - apiUrl: GAS のデプロイURL（/exec）
   // - apiToken: GAS 側（スクリプトプロパティ）と一致させる
-  apiUrl: "",
-  apiToken: ""
+  apiUrl: "https://script.google.com/macros/s/AKfycbyBWrz0NatEn8x-y20IB8mkQ4lJ3_yhohOe5LV2aW7ak_7C1mIGLUsQFLody0nKcXjGcQ/exec",
+  apiToken: "rhr2026_guideline_runninghomeruninc_2014"
 };
