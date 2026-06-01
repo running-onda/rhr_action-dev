@@ -19,6 +19,44 @@ function isLikelyCorsFailure(err) {
   return err && (err.name === "TypeError" || String(err.message || "").includes("Failed to fetch"));
 }
 
+const GAS_DEPLOY_HINT =
+  "GAS側に Code.gs が反映されていません。Apps Script エディタで gas/Code.gs を貼り付けて保存し、Webアプリを「新バージョン」で再デプロイしてください。";
+
+function formatApiError(err, fallback = "API_ERROR") {
+  const msg = String(err && err.message ? err.message : err || fallback);
+  if (
+    msg.includes("API_JSONP_LOAD_FAILED") ||
+    msg.includes("doGet") ||
+    msg.includes("doPost") ||
+    msg.includes(GAS_DEPLOY_HINT)
+  ) {
+    return msg.includes(GAS_DEPLOY_HINT) ? msg : `${msg}\n\n${GAS_DEPLOY_HINT}`;
+  }
+  return msg;
+}
+
+export { formatApiError };
+
+async function probeGasHtmlError(apiUrl, apiToken, action) {
+  try {
+    const u = new URL(apiUrl);
+    u.searchParams.set("token", apiToken);
+    u.searchParams.set("action", action);
+    u.searchParams.set("limit", "1");
+    const res = await fetch(u.toString(), { method: "GET", mode: "cors" });
+    const text = await res.text();
+    if (/スクリプト関数が見つかりません|Script function not found/i.test(text)) {
+      return GAS_DEPLOY_HINT;
+    }
+    if (/INVALID_TOKEN/i.test(text)) {
+      return "API_TOKEN が一致しません。env.js の apiToken と GAS の API_TOKEN を同じ値にしてください。";
+    }
+  } catch {
+    // ignore probe failures
+  }
+  return "";
+}
+
 function buildJsonpUrl(apiUrl, apiToken, action, payload, callbackName) {
   const u = new URL(apiUrl);
   u.searchParams.set("token", apiToken);
@@ -67,7 +105,10 @@ async function jsonpCall(apiUrl, apiToken, action, payload = {}) {
     const script = document.createElement("script");
     script.src = url;
     script.async = true;
-    script.onerror = () => cleanup(new Error("API_JSONP_LOAD_FAILED"));
+    script.onerror = async () => {
+      const hint = await probeGasHtmlError(apiUrl, apiToken, action);
+      cleanup(new Error(hint || "API_JSONP_LOAD_FAILED"));
+    };
     document.head.appendChild(script);
   });
 }
@@ -89,6 +130,9 @@ export async function apiCall(action, payload = {}) {
     });
 
     const text = await res.text();
+    if (/Script function not found|スクリプト関数が見つかりません/i.test(text)) {
+      throw new Error(GAS_DEPLOY_HINT);
+    }
     let json;
     try {
       json = JSON.parse(text);
@@ -113,7 +157,7 @@ export async function apiCall(action, payload = {}) {
     }
 
     // Last resort: fire-and-forget no-cors (cannot read response)
-    if (action === "saveAssessment") {
+    if (action === "saveAssessment" || action === "saveAssessmentBatch") {
       await fetch(apiUrl, {
         method: "POST",
         mode: "no-cors",

@@ -1,4 +1,5 @@
 import { createRoom, getRooms, isApiEnabled } from "./assessment-store.js";
+import { formatApiError } from "./api.js";
 import { buildViewerUrl } from "./room.js";
 
 const grades = [
@@ -84,7 +85,7 @@ async function refreshRooms() {
       })
       .join("");
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5">取得に失敗しました: ${escapeHtml(e.message || String(e))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">取得に失敗しました: ${escapeHtml(formatApiError(e))}</td></tr>`;
   }
 }
 
@@ -105,7 +106,7 @@ async function onCreateRoom() {
     setResult(r.roomId);
     await refreshRooms();
   } catch (e) {
-    alert(`ルーム作成に失敗しました: ${e.message || String(e)}`);
+    alert(`ルーム作成に失敗しました:\n${formatApiError(e)}`);
   } finally {
     setBusy(false);
   }
