@@ -22,13 +22,6 @@
       background: #f5f4f0;
     }
   </style>
-  <script>
-    (function () {
-      var K = window.APP_ENV.authSessionKey;
-      if (sessionStorage.getItem(K) !== "1") return;
-      document.documentElement.classList.add("auth-session-ok");
-    })();
-  </script>
   <style>
     :root {
       --bg: #f5f4f0;
@@ -307,16 +300,68 @@
       font-weight: 600;
       cursor: pointer;
     }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245, 244, 240, 0.82);
+      backdrop-filter: blur(2px);
+    }
+    .loading-overlay[hidden] { display: none !important; }
+    .loading-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.08);
+    }
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(26, 39, 68, 0.12);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-message {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      letter-spacing: 0.02em;
+      white-space: pre-line;
+      text-align: center;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="is-locked">
   <script>
     (function () {
       var K = window.APP_ENV.authSessionKey;
-      if (sessionStorage.getItem(K) !== "1") return;
-      document.body.classList.remove("is-locked");
+      var room = new URLSearchParams(location.search).get("room") || sessionStorage.getItem("rhr-current-room-id");
+      if (room || sessionStorage.getItem(K) === "1") {
+        document.body.classList.remove("is-locked");
+      }
     })();
   </script>
+
+  <div id="loadingOverlay" class="loading-overlay" hidden aria-live="polite" aria-busy="true">
+    <div class="loading-box">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p class="loading-message" id="loadingMessage">読み込み中…</p>
+    </div>
+  </div>
 
   <div id="authGate" class="auth-gate">
     <div class="auth-card">
@@ -336,7 +381,7 @@
       <div class="header-inner">
         <h1>自己評価サマリー</h1>
         <div class="header-actions">
-          <a id="backLink" href="index.html" class="btn">← 行動指針に戻る</a>
+          <a id="backLink" href="viewer.html" class="btn">← 評価シートに戻る</a>
           <button type="button" class="btn" id="logoutBtn">ログアウト</button>
         </div>
       </div>
@@ -407,7 +452,9 @@
   </div>
 
   <script src="insights.js"></script>
-  <script>
+  <script type="module">
+    import "./js/insights-loader.js";
+
     const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
     const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
 
@@ -416,16 +463,21 @@
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
-    function unlockApp() {
-      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+    async function unlockApp({ persistSession = true } = {}) {
+      if (persistSession) sessionStorage.setItem(AUTH_SESSION_KEY, "1");
       document.body.classList.remove("is-locked");
       document.getElementById("authGate").hidden = true;
       const app = document.getElementById("appContent");
       app.hidden = false;
       app.removeAttribute("hidden");
       if (typeof window.initInsights === "function") {
-        window.initInsights();
+        await window.initInsights();
       }
+    }
+
+    function hasRoomAccess() {
+      const room = new URLSearchParams(location.search).get("room") || sessionStorage.getItem("rhr-current-room-id");
+      return Boolean(room);
     }
 
     function lockApp() {
@@ -441,7 +493,7 @@
       const err = document.getElementById("authError");
       if (hash === ACCESS_PASSWORD_HASH) {
         err.textContent = "";
-        unlockApp();
+        await unlockApp();
       } else {
         err.textContent = "パスワードが違います。";
       }
@@ -449,7 +501,9 @@
 
     document.getElementById("logoutBtn").addEventListener("click", lockApp);
 
-    if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
+    if (hasRoomAccess()) {
+      unlockApp({ persistSession: false });
+    } else if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
       unlockApp();
     }
   </script>

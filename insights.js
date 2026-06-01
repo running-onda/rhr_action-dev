@@ -69,10 +69,6 @@
     const byMiddle = new Map();
 
     getData().forEach(d => {
-      const saved = assessments[itemKey(d)] || {};
-      const rating = saved.selfRating ?? saved.rating ?? 0;
-      rows.push({ ...d, rating });
-      if (!rating) return;
       const mk = `${d.category}::${d.middle}`;
       if (!byMiddle.has(mk)) {
         byMiddle.set(mk, {
@@ -82,16 +78,25 @@
           count: 0
         });
       }
+    });
+
+    getData().forEach(d => {
+      const saved = assessments[itemKey(d)] || {};
+      const rating = Number(saved.selfRating ?? saved.rating ?? 0);
+      rows.push({ ...d, rating });
+      const mk = `${d.category}::${d.middle}`;
       const m = byMiddle.get(mk);
-      m.sum += rating;
-      m.count += 1;
+      if (m) {
+        m.sum += rating;
+        m.count += 1;
+      }
     });
 
     const middleList = [...byMiddle.values()]
       .map(m => ({
         ...m,
-        avg10: m.sum / m.count,
-        avgDisplay: toDisplayScore(m.sum / m.count)
+        avg10: m.count > 0 ? m.sum / m.count : 0,
+        avgDisplay: m.count > 0 ? toDisplayScore(m.sum / m.count) : 0
       }))
       .sort((a, b) => a.category.localeCompare(b.category) || a.middle.localeCompare(b.middle));
 
@@ -370,9 +375,37 @@ ${ctx.minutes || "（なし）"}`;
     if (mainEl) mainEl.hidden = true;
   }
 
-  function init() {
+  function showLoading(message) {
+    const overlay = document.getElementById("loadingOverlay");
+    const msg = document.getElementById("loadingMessage");
+    if (!overlay) return;
+    if (msg) msg.textContent = message || "読み込み中…";
+    overlay.hidden = false;
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.hidden = true;
+  }
+
+  function setupNavigation(roomId, roomMeta) {
+    const backLink = document.getElementById("backLink");
+    if (backLink) {
+      if (roomId) {
+        backLink.href = `viewer.html?room=${encodeURIComponent(roomId)}`;
+      } else {
+        backLink.href = "viewer.html";
+      }
+      backLink.textContent = "← 評価シートに戻る";
+    }
+  }
+
+  async function init() {
     try {
+      showLoading("評価データを読み込んでいます…");
+
       if (!getData().length) {
+        hideLoading();
         const alertEl = document.getElementById("completionAlert");
         if (alertEl) {
           alertEl.hidden = false;
@@ -383,6 +416,21 @@ ${ctx.minutes || "（なし）"}`;
         return;
       }
 
+      let assessments = {};
+      let roomMeta = null;
+      let roomId = "";
+
+      if (typeof window.__fetchInsightsData === "function") {
+        const payload = await window.__fetchInsightsData();
+        assessments = payload.assessments || {};
+        roomMeta = payload.room || null;
+        roomId = payload.roomId || "";
+      } else {
+        assessments = loadAssessments();
+      }
+
+      setupNavigation(roomId, roomMeta);
+
       document.title = (ENV.title || "行動指針") + " — 自己評価サマリー";
       const envBanner = document.getElementById("envBanner");
       if (ENV.id === "development" && envBanner) {
@@ -390,18 +438,20 @@ ${ctx.minutes || "（なし）"}`;
         envBanner.hidden = false;
       }
 
-      const assessments = loadAssessments();
       const userName =
+        roomMeta?.employeeName ||
         localStorage.getItem(USER_NAME_KEY) ||
         localStorage.getItem("rhr-guideline-user-name") ||
         "";
       const rawGrade =
+        roomMeta?.gradeIndex ??
         localStorage.getItem(MY_GRADE_KEY) ??
         localStorage.getItem("rhr-guideline-my-grade");
       const gradeIndex =
-        rawGrade === null || rawGrade === "" ? -1 : Number(rawGrade);
+        rawGrade === null || rawGrade === "" || rawGrade === undefined ? -1 : Number(rawGrade);
       const gradeName =
-        gradeIndex >= 0 && grades[gradeIndex] ? grades[gradeIndex].name : "未設定";
+        roomMeta?.gradeName ||
+        (gradeIndex >= 0 && grades[gradeIndex] ? grades[gradeIndex].name : "未設定");
 
       const summaryUser = document.getElementById("summaryUser");
       const summaryGrade = document.getElementById("summaryGrade");
@@ -413,11 +463,14 @@ ${ctx.minutes || "（なし）"}`;
       const mainEl = document.getElementById("summaryMain");
 
       if (stats.rated.length === 0) {
+        hideLoading();
         if (alertEl) {
           alertEl.hidden = false;
           alertEl.className = "alert";
           alertEl.textContent =
-            "自己評価がまだありません。行動指針ページ（index.html）で5段階評価を入力し「保存する」を押してから、再度お越しください。";
+            roomId
+              ? "自己評価がまだありません。評価シートで5段階評価を入力し「すべて保存」を押してから、再度お越しください。"
+              : "自己評価がまだありません。評価シートで5段階評価を入力し「保存する」を押してから、再度お越しください。";
         }
         if (mainEl) mainEl.hidden = true;
         return;
@@ -427,7 +480,7 @@ ${ctx.minutes || "（なし）"}`;
         if (!stats.complete) {
           alertEl.hidden = false;
           alertEl.className = "alert alert-warn";
-          alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は行動指針ページで評価・保存してください。`;
+          alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は評価シートで評価・保存してください。`;
         } else {
           alertEl.hidden = true;
         }
@@ -472,7 +525,9 @@ ${ctx.minutes || "（なし）"}`;
           }
         });
       }
+      hideLoading();
     } catch (err) {
+      hideLoading();
       showError(err);
     }
   }

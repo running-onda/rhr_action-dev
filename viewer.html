@@ -972,6 +972,49 @@
       .self-assess { padding: 18px 16px; }
     }
 
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245, 244, 240, 0.82);
+      backdrop-filter: blur(2px);
+    }
+    .loading-overlay[hidden] { display: none !important; }
+    .loading-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.08);
+    }
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(26, 39, 68, 0.12);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin-loader 0.8s linear infinite;
+    }
+    .loading-message {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      letter-spacing: 0.02em;
+      text-align: center;
+      white-space: pre-line;
+    }
+    @keyframes spin-loader {
+      to { transform: rotate(360deg); }
+    }
+
     body.is-locked {
       overflow: hidden;
       height: 100%;
@@ -1116,6 +1159,13 @@
     </div>
   </div>
 
+  <div id="loadingOverlay" class="loading-overlay" hidden aria-live="polite" aria-busy="true">
+    <div class="loading-box">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p class="loading-message" id="loadingMessage">処理中…</p>
+    </div>
+  </div>
+
   <div id="appContent" hidden inert aria-hidden="true">
   <div id="envBanner" class="env-banner" hidden></div>
   <header>
@@ -1156,7 +1206,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <a href="insights.html" class="btn-header btn-header-secondary">評価サマリー</a>
+        <a href="insights.html" class="btn-header btn-header-secondary" id="insightsLink">評価サマリー</a>
         <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
       </div>
@@ -1291,13 +1341,36 @@
     const userNameInput = document.getElementById("userName");
     const saveAllBtn = document.getElementById("saveAllBtn");
     const saveToast = document.getElementById("saveToast");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingMessage = document.getElementById("loadingMessage");
+    const insightsLink = document.getElementById("insightsLink");
 
     const STORAGE_KEY = window.APP_ENV.storageKey;
     const USER_NAME_KEY = window.APP_ENV.userNameKey;
     const MY_GRADE_KEY = window.APP_ENV.myGradeKey;
+    const ROOM_SESSION_KEY = "rhr-current-room-id";
 
     const { roomId, role } = getRoomContext();
     const apiEnabled = isApiEnabled();
+
+    if (roomId) {
+      sessionStorage.setItem(ROOM_SESSION_KEY, roomId);
+      if (insightsLink) {
+        insightsLink.href = `insights.html?room=${encodeURIComponent(roomId)}`;
+      }
+    }
+
+    function showLoading(message) {
+      if (!loadingOverlay) return;
+      if (loadingMessage) loadingMessage.textContent = message || "処理中…";
+      loadingOverlay.hidden = false;
+      if (saveAllBtn) saveAllBtn.disabled = true;
+    }
+
+    function hideLoading() {
+      if (loadingOverlay) loadingOverlay.hidden = true;
+      if (saveAllBtn) saveAllBtn.disabled = false;
+    }
 
     document.title = (window.APP_ENV.title || "行動指針ビューア") + " — 評価シート";
     const envBanner = document.getElementById("envBanner");
@@ -1678,6 +1751,17 @@
       `;
     }
 
+    function syncBlockToAssessments(key, block) {
+      const data = readAssessFromBlock(block);
+      assessments[key] = { ...(assessments[key] || {}), ...data };
+    }
+
+    function flushVisibleBlocksToAssessments() {
+      itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
+        syncBlockToAssessments(block.dataset.assessKey, block);
+      });
+    }
+
     function bindAssessmentEvents() {
       itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
         const key = block.dataset.assessKey;
@@ -1693,6 +1777,23 @@
               dotsEl.querySelectorAll(".rating-dot").forEach(b => {
                 b.classList.toggle("active", Number(b.dataset.rating) === v);
               });
+              syncBlockToAssessments(key, block);
+            });
+          });
+        });
+
+        block.querySelector(".self-comment")?.addEventListener("input", () => {
+          syncBlockToAssessments(key, block);
+        });
+
+        block.querySelectorAll(".supervisor-comment, .supervisor-name").forEach(el => {
+          el.addEventListener("input", () => syncBlockToAssessments(key, block));
+        });
+
+        block.querySelectorAll(".supervisor-block .rating-dots").forEach(dotsEl => {
+          dotsEl.querySelectorAll(".rating-dot").forEach(btn => {
+            btn.addEventListener("click", () => {
+              syncBlockToAssessments(key, block);
             });
           });
         });
@@ -1728,15 +1829,20 @@
 
         // GAS保存（roomあり & API設定あり）
         if (roomId && apiEnabled) {
-          const d = dataIndexByKey[key];
-          if (!d) throw new Error("ITEM_NOT_FOUND");
+          showLoading("保存しています…");
+          try {
+            const d = dataIndexByKey[key];
+            if (!d) throw new Error("ITEM_NOT_FOUND");
 
-          await saveAssessmentBatch(roomId, buildSaveRows(key, d, data));
-          await reloadAssessmentsFromApi();
+            await saveAssessmentBatch(roomId, buildSaveRows(key, d, data));
+            await reloadAssessmentsFromApi();
 
-          assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
-          markBlockSaved(block, now);
-          showToast("保存済");
+            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+            markBlockSaved(block, now);
+            showToast("保存済");
+          } finally {
+            hideLoading();
+          }
           return;
         }
 
@@ -1753,37 +1859,46 @@
 
     function saveAllAssessments() {
       const doSaveAll = async () => {
-        const blocks = [...itemsEl.querySelectorAll(".self-assess[data-assess-key]")];
+        flushVisibleBlocksToAssessments();
         const name = userNameInput.value.trim();
         const now = new Date().toISOString();
+        const allKeys = Object.keys(dataIndexByKey);
 
         // GASバッチ保存（roomあり & API設定あり）
         if (roomId && apiEnabled) {
-          const rows = [];
-          for (const block of blocks) {
-            const key = block.dataset.assessKey;
-            const d = dataIndexByKey[key];
-            if (!d) continue;
-            const data = readAssessFromBlock(block);
-            rows.push(...buildSaveRows(key, d, data));
-            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
-            markBlockSaved(block, now);
-          }
+          showLoading("すべて保存しています…\n完了までお待ちください");
+          try {
+            const rows = [];
+            for (const key of allKeys) {
+              const d = dataIndexByKey[key];
+              if (!d) continue;
+              const data = assessments[key] || {};
+              rows.push(...buildSaveRows(key, d, data));
+              assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+            }
 
-          await saveAssessmentBatch(roomId, rows);
-          await reloadAssessmentsFromApi();
-          renderAndBind();
-          showToast("保存済（すべて）");
+            itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
+              markBlockSaved(block, now);
+            });
+
+            await saveAssessmentBatch(roomId, rows);
+            await reloadAssessmentsFromApi();
+            renderAndBind();
+            showToast("保存済（すべて）");
+          } finally {
+            hideLoading();
+          }
           return;
         }
 
         // フォールバック: localStorage
-        for (const block of blocks) {
-          const key = block.dataset.assessKey;
-          const data = readAssessFromBlock(block);
+        for (const key of allKeys) {
+          const data = assessments[key] || {};
           assessments[key] = { ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
-          markBlockSaved(block, now);
         }
+        itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
+          markBlockSaved(block, now);
+        });
         saveAssessmentsLocal();
         showToast("保存済（すべて）");
       };
@@ -1830,6 +1945,7 @@
 
     async function initRoomAndRender() {
       if (roomId && apiEnabled) {
+        showLoading("評価データを読み込んでいます…");
         try {
           const res = await getAssessment(roomId);
           roomMeta = res.room || null;
@@ -1843,6 +1959,8 @@
         } catch (e) {
           alert("評価データの読み込みに失敗しました: " + (e?.message || String(e)));
           assessments = {};
+        } finally {
+          hideLoading();
         }
       } else {
         assessments = loadAssessmentsLocal();
