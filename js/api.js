@@ -1,9 +1,9 @@
-// GAS Web App API client (minimal)
-// - Uses window.APP_ENV.apiUrl / apiToken
-// - POST JSON: { token, action, ...payload }
+// GAS Web App API client
+// Reads: fetch POST -> JSONP GET fallback
+// Writes: fetch POST -> form POST (iframe) -> JSONP verify
 
 export function getEnv() {
-  return (typeof window !== "undefined" && window.APP_ENV) ? window.APP_ENV : {};
+  return typeof window !== "undefined" && window.APP_ENV ? window.APP_ENV : {};
 }
 
 export function getApiConfig() {
@@ -15,7 +15,6 @@ export function getApiConfig() {
 }
 
 function isLikelyCorsFailure(err) {
-  // fetch() often throws TypeError on CORS/network failures
   return err && (err.name === "TypeError" || String(err.message || "").includes("Failed to fetch"));
 }
 
@@ -37,6 +36,10 @@ function formatApiError(err, fallback = "API_ERROR") {
 
 export { formatApiError };
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function probeGasHtmlError(apiUrl, apiToken, action) {
   try {
     const u = new URL(apiUrl);
@@ -52,7 +55,7 @@ async function probeGasHtmlError(apiUrl, apiToken, action) {
       return "API_TOKEN が一致しません。env.js の apiToken と GAS の API_TOKEN を同じ値にしてください。";
     }
   } catch {
-    // ignore probe failures
+    // ignore
   }
   return "";
 }
@@ -88,7 +91,7 @@ async function jsonpCall(apiUrl, apiToken, action, payload = {}) {
       else resolve(data);
     }
 
-    window[cb] = (json) => {
+    window[cb] = json => {
       try {
         if (!json || json.ok !== true) {
           const code = json && json.error ? json.error : "API_ERROR";
@@ -131,12 +134,14 @@ async function formPostCall(apiUrl, fields) {
     const iframeName = `__rhr_iframe_${Math.random().toString(36).slice(2)}`;
     const iframe = document.createElement("iframe");
     iframe.name = iframeName;
+    iframe.title = "gas-save";
     iframe.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
 
     const form = document.createElement("form");
     form.method = "POST";
     form.action = apiUrl;
     form.target = iframeName;
+    form.enctype = "application/x-www-form-urlencoded";
     form.acceptCharset = "UTF-8";
     form.style.display = "none";
 
@@ -148,23 +153,28 @@ async function formPostCall(apiUrl, fields) {
       form.appendChild(input);
     });
 
-    let done = false;
-    const timeout = setTimeout(() => finish(null), 4000);
+    let settled = false;
+    const timeout = setTimeout(() => finish(new Error("FORM_POST_TIMEOUT")), 20000);
 
-    function finish(err) {
-      if (done) return;
-      done = true;
+    function finish(err, data) {
+      if (settled) return;
+      settled = true;
       clearTimeout(timeout);
-      setTimeout(() => {
+      window.setTimeout(() => {
         form.remove();
         iframe.remove();
-      }, 200);
+      }, 300);
       if (err) reject(err);
-      else resolve({ ok: true });
+      else resolve(data ?? { ok: true });
     }
 
-    iframe.addEventListener("load", () => finish(null));
-    iframe.addEventListener("error", () => finish(new Error("FORM_POST_FAILED")));
+    // Ignore the initial about:blank load; complete only after form navigation.
+    let loadCount = 0;
+    iframe.addEventListener("load", () => {
+      loadCount += 1;
+      if (loadCount < 2) return;
+      finish(null);
+    });
 
     document.body.appendChild(iframe);
     document.body.appendChild(form);
@@ -190,6 +200,36 @@ function parseApiResponse(text) {
   return json.data;
 }
 
+function shouldFallbackToForm(err) {
+  const msg = String(err && err.message ? err.message : err);
+  if (msg.includes("INVALID_TOKEN") || msg.includes("API_TOKEN_NOT_SET") || msg.includes("API_URL_NOT_SET")) {
+    return false;
+  }
+  return isLikelyCorsFailure(err) || msg.startsWith("API_");
+}
+
+function countAssessmentRows(assessments) {
+  return Object.values(assessments || {}).filter(row => {
+    const selfRating = Number(row?.selfRating || 0);
+    const selfComment = String(row?.selfComment || "").trim();
+    const sup = Array.isArray(row?.supervisors) ? row.supervisors : [];
+    const supFilled = sup.some(s => Number(s?.rating || 0) > 0 || String(s?.comment || "").trim());
+    return selfRating > 0 || selfComment || supFilled;
+  }).length;
+}
+
+async function verifySavedAssessment(apiUrl, apiToken, roomId, rows) {
+  const meaningful = (rows || []).filter(r => Number(r.rating || 0) > 0 || String(r.comment || "").trim());
+  if (!meaningful.length) return;
+
+  await sleep(800);
+  const latest = await jsonpCall(apiUrl, apiToken, "getAssessment", { roomId });
+  const savedCount = countAssessmentRows(latest?.assessments);
+  if (savedCount === 0) {
+    throw new Error("SAVE_VERIFY_FAILED: 保存後の確認でデータが見つかりませんでした");
+  }
+}
+
 async function writeApiCall(action, payload = {}) {
   const { apiUrl, apiToken } = getApiConfig();
   const body = { token: apiToken, action, ...payload };
@@ -201,25 +241,26 @@ async function writeApiCall(action, payload = {}) {
       body: JSON.stringify(body)
     });
     const text = await res.text();
-    return parseApiResponse(text);
-  } catch (err) {
-    if (!isLikelyCorsFailure(err) && !String(err.message || "").startsWith("API_")) {
-      throw err;
+    const data = parseApiResponse(text);
+    if (action === "saveAssessmentBatch" && payload.roomId) {
+      await verifySavedAssessment(apiUrl, apiToken, payload.roomId, payload.rows || []);
     }
+    return data;
+  } catch (err) {
+    if (!shouldFallbackToForm(err)) throw err;
   }
 
   await formPostCall(apiUrl, buildFormFields(apiToken, action, payload));
+  if (action === "saveAssessmentBatch" && payload.roomId) {
+    await verifySavedAssessment(apiUrl, apiToken, payload.roomId, payload.rows || []);
+  }
   return { ok: true };
 }
 
 export async function apiCall(action, payload = {}) {
   const { apiUrl, apiToken } = getApiConfig();
-  if (!apiUrl) {
-    throw new Error("API_URL_NOT_SET");
-  }
-  if (!apiToken) {
-    throw new Error("API_TOKEN_NOT_SET");
-  }
+  if (!apiUrl) throw new Error("API_URL_NOT_SET");
+  if (!apiToken) throw new Error("API_TOKEN_NOT_SET");
 
   const writeActions = new Set(["saveAssessment", "saveAssessmentBatch"]);
   if (writeActions.has(action)) {
@@ -232,17 +273,14 @@ export async function apiCall(action, payload = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: apiToken, action, ...payload })
     });
-
     const text = await res.text();
     return parseApiResponse(text);
   } catch (err) {
     if (!isLikelyCorsFailure(err)) throw err;
-
     const jsonpSupported = new Set(["createRoom", "getRooms", "getAssessment", "getRoomSummary"]);
     if (jsonpSupported.has(action)) {
       return await jsonpCall(apiUrl, apiToken, action, payload);
     }
-
     throw err;
   }
 }
