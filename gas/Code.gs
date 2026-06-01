@@ -848,6 +848,26 @@ function indexMap_(header) {
   };
 }
 
+function roomSummaryRow_(r, stats) {
+  return {
+    roomId: r.roomId,
+    employeeName: r.employeeName,
+    gradeName: r.gradeName,
+    gradeTierIndex: r.gradeTierIndex,
+    gradeRank: r.gradeRank,
+    gradeBeforeTierIndex: r.gradeBeforeTierIndex,
+    gradeBeforeRank: r.gradeBeforeRank,
+    gradeAfterTierIndex: r.gradeAfterTierIndex,
+    gradeAfterRank: r.gradeAfterRank,
+    gradeLabelBefore: r.gradeLabelBefore || r.gradeName,
+    gradeLabelAfter: r.gradeLabelAfter || "",
+    managerName: r.managerName,
+    selfAvg: stats.selfAvg,
+    managerAvg: stats.managerAvg,
+    lastUpdatedAt: stats.last
+  };
+}
+
 function getRoomsSummary_(limit) {
   const ss = getSs_();
   const roomsSheet = ss.getSheetByName(SHEET_ROOMS);
@@ -866,17 +886,7 @@ function getRoomsSummary_(limit) {
   const aValues = aSheet.getDataRange().getValues();
   if (aValues.length <= 1) {
     return rooms
-      .map(r => ({
-        roomId: r.roomId,
-        employeeName: r.employeeName,
-        gradeName: r.gradeName,
-        gradeLabelBefore: r.gradeLabelBefore || r.gradeName,
-        gradeLabelAfter: r.gradeLabelAfter || "",
-        managerName: r.managerName,
-        selfAvg: 0,
-        managerAvg: 0,
-        lastUpdatedAt: r.updatedAt
-      }))
+      .map(r => roomSummaryRow_(r, { selfAvg: 0, managerAvg: 0, last: r.updatedAt }))
       .slice(0, limit);
   }
   const aHeader = aValues[0];
@@ -911,17 +921,7 @@ function getRoomsSummary_(limit) {
     const a = agg.get(r.roomId) || { selfSum: 0, selfCount: 0, mgrSum: 0, mgrCount: 0, last: "" };
     const selfAvg = a.selfCount ? a.selfSum / a.selfCount : 0;
     const mgrAvg = a.mgrCount ? a.mgrSum / a.mgrCount : 0;
-    return {
-      roomId: r.roomId,
-      employeeName: r.employeeName,
-      gradeName: r.gradeName,
-      gradeLabelBefore: r.gradeLabelBefore || r.gradeName,
-      gradeLabelAfter: r.gradeLabelAfter || "",
-      managerName: r.managerName,
-      selfAvg: selfAvg,
-      managerAvg: mgrAvg,
-      lastUpdatedAt: a.last || r.updatedAt
-    };
+    return roomSummaryRow_(r, { selfAvg: selfAvg, managerAvg: mgrAvg, last: a.last || r.updatedAt });
   });
 
   out.sort((a, b) => String(b.lastUpdatedAt).localeCompare(String(a.lastUpdatedAt)));

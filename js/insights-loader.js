@@ -1,6 +1,7 @@
 import { getAssessment, isApiEnabled } from "./assessment-store.js";
 import {
   roomGradeLabels,
+  inferAfterGrade,
   normalizeRoomGrade,
   formatGradeLabel,
   guidelineIndexForTier,
@@ -9,6 +10,7 @@ import {
 
 window.RHR_GRADES = {
   roomGradeLabels,
+  inferAfterGrade,
   normalizeRoomGrade,
   formatGradeLabel,
   guidelineIndexForTier,

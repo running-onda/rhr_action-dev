@@ -122,13 +122,81 @@ export function normalizeRoomGrade(room) {
   };
 }
 
-export function roomGradeLabels(room) {
+function normalizeRank(rank) {
+  const r = String(rank || "").trim().toUpperCase();
+  return r === "L" || r === "M" || r === "H" ? r : "L";
+}
+
+function scoreToScaleZone(score) {
+  if (score <= 3.0) {
+    return { targetRank: null, isDemotion: true, isTierPromo: false };
+  }
+  if (score < 3.4) {
+    return { targetRank: "L", isDemotion: false, isTierPromo: false };
+  }
+  if (score < 3.7) {
+    return { targetRank: "M", isDemotion: false, isTierPromo: false };
+  }
+  if (score < 4.0) {
+    return { targetRank: "H", isDemotion: false, isTierPromo: false };
+  }
+  return { targetRank: null, isDemotion: false, isTierPromo: true };
+}
+
+/** 査定MTG前職級と上司評価平均から、評価後の想定職級を算出 */
+export function inferAfterGrade(beforeTierIndex, beforeRank, managerAvg) {
+  const score = Number(managerAvg);
+  if (!Number.isFinite(score) || score <= 0) return null;
+
+  const tierIdx = Number(beforeTierIndex);
+  const tier = getTier(tierIdx);
+  if (!tier) return null;
+
+  if (tierIdx === 0) {
+    if (score < 3.5) return { tierIndex: 0, rank: "" };
+    return { tierIndex: 1, rank: "L" };
+  }
+
+  const zone = scoreToScaleZone(score);
+
+  if (zone.isDemotion) {
+    const newTier = Math.max(0, tierIdx - 1);
+    const t = getTier(newTier);
+    return { tierIndex: newTier, rank: t?.hasRank ? "L" : "" };
+  }
+  if (zone.isTierPromo) {
+    if (tierIdx >= GRADE_TIERS.length - 1) {
+      return { tierIndex: tierIdx, rank: "H" };
+    }
+    const newTier = tierIdx + 1;
+    const t = getTier(newTier);
+    return { tierIndex: newTier, rank: t?.hasRank ? "L" : "" };
+  }
+
+  return { tierIndex: tierIdx, rank: zone.targetRank };
+}
+
+export function roomGradeLabels(room, managerAvgOverride) {
   const g = normalizeRoomGrade(room);
+  let after =
+    g.afterTierIndex === null ? "" : formatGradeLabel(g.afterTierIndex, g.afterRank);
+
+  if (!after) {
+    const avg = Number(
+      managerAvgOverride !== undefined && managerAvgOverride !== null
+        ? managerAvgOverride
+        : room?.managerAvg ?? room?.manager_avg ?? 0
+    );
+    if (avg > 0) {
+      const inferred = inferAfterGrade(g.beforeTierIndex, g.beforeRank, avg);
+      if (inferred) after = formatGradeLabel(inferred.tierIndex, inferred.rank);
+    }
+  }
+
   return {
     current: formatGradeLabel(g.tierIndex, g.rank),
     before: formatGradeLabel(g.beforeTierIndex, g.beforeRank),
-    after:
-      g.afterTierIndex === null ? "" : formatGradeLabel(g.afterTierIndex, g.afterRank),
+    after,
     guidelineIndex: guidelineIndexForTier(g.tierIndex)
   };
 }

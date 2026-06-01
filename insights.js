@@ -592,9 +592,18 @@ ${ctx.minutes || "（なし）"}`;
       const summaryGradeAfter = document.getElementById("summaryGradeAfter");
       if (summaryUser) summaryUser.textContent = userName || "（氏名未設定）";
       if (summaryGradeBefore) summaryGradeBefore.textContent = gradeCtx.before;
-      if (summaryGradeAfter) summaryGradeAfter.textContent = gradeCtx.after;
 
       const stats = collectRatings(assessments);
+
+      if (summaryGradeAfter) {
+        let afterText = gradeCtx.after;
+        if (roomMeta && stats.mgrAvg10 > 0 && window.RHR_GRADES) {
+          afterText = window.RHR_GRADES.roomGradeLabels(
+            { ...roomMeta, managerAvg: stats.mgrAvg10 }
+          ).after;
+        }
+        summaryGradeAfter.textContent = afterText || "—";
+      }
       const alertEl = document.getElementById("completionAlert");
       const mainEl = document.getElementById("summaryMain");
 

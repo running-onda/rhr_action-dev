@@ -96,7 +96,12 @@ async function init() {
     const res = await apiCall("getRoomSummary", { roomId });
     const room = res.room || {};
 
-    const labels = roomGradeLabels(room);
+    const mgrAvg =
+      res.items?.length
+        ? res.items.reduce((s, it) => s + (Number(it.managerRating) > 0 ? Number(it.managerRating) : 0), 0) /
+          Math.max(1, res.items.filter(it => Number(it.managerRating) > 0).length)
+        : 0;
+    const labels = roomGradeLabels(room, mgrAvg);
     $("meta").textContent = `社員: ${room.employeeName || "—"} / 評価前職級: ${labels.before} / 評価後職級: ${labels.after || "—"} / roomId: ${room.roomId || roomId}`;
 
     renderTableBody(
