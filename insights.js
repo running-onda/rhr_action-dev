@@ -42,8 +42,17 @@
     }
   }
 
-  function toDisplayScore(avg5) {
-    return Math.round(avg5 * 80) / 100;
+  function formatScore(v) {
+    const n = Number(v || 0);
+    if (!n) return "—";
+    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+  }
+
+  function getManagerRating(saved) {
+    const supervisors = Array.isArray(saved?.supervisors) ? saved.supervisors : [];
+    const rated = supervisors.map(s => Number(s.rating || 0)).filter(r => r > 0);
+    if (!rated.length) return 0;
+    return rated.reduce((a, b) => a + b, 0) / rated.length;
   }
 
   function getUpperTier(score) {
@@ -64,7 +73,7 @@
     return unit * segment + unit / 2;
   }
 
-  function collectSelfRatings(assessments) {
+  function collectRatings(assessments) {
     const rows = [];
     const byMiddle = new Map();
 
@@ -74,8 +83,10 @@
         byMiddle.set(mk, {
           category: d.category,
           middle: d.middle,
-          sum: 0,
-          count: 0
+          selfSum: 0,
+          selfCount: 0,
+          mgrSum: 0,
+          mgrCount: 0
         });
       }
     });
@@ -83,31 +94,53 @@
     getData().forEach(d => {
       const saved = assessments[itemKey(d)] || {};
       const rating = Number(saved.selfRating ?? saved.rating ?? 0);
-      rows.push({ ...d, rating });
+      const managerRating = getManagerRating(saved);
+      rows.push({ ...d, rating, managerRating });
       const mk = `${d.category}::${d.middle}`;
       const m = byMiddle.get(mk);
       if (m) {
-        m.sum += rating;
-        m.count += 1;
+        if (rating > 0) {
+          m.selfSum += rating;
+          m.selfCount += 1;
+        }
+        if (managerRating > 0) {
+          m.mgrSum += managerRating;
+          m.mgrCount += 1;
+        }
       }
     });
 
     const middleList = [...byMiddle.values()]
       .map(m => ({
         ...m,
-        avg10: m.count > 0 ? m.sum / m.count : 0,
-        avgDisplay: m.count > 0 ? toDisplayScore(m.sum / m.count) : 0
+        avg10: m.selfCount > 0 ? m.selfSum / m.selfCount : 0,
+        mgrAvg10: m.mgrCount > 0 ? m.mgrSum / m.mgrCount : 0
       }))
       .sort((a, b) => a.category.localeCompare(b.category) || a.middle.localeCompare(b.middle));
 
     const rated = rows.filter(r => r.rating > 0);
+    const mgrRated = rows.filter(r => r.managerRating > 0);
     const total = getData().length;
     const complete = rated.length === total;
+    const mgrComplete = mgrRated.length === total;
     const avg10 = rated.length
       ? rated.reduce((s, r) => s + r.rating, 0) / rated.length
       : 0;
+    const mgrAvg10 = mgrRated.length
+      ? mgrRated.reduce((s, r) => s + r.managerRating, 0) / mgrRated.length
+      : 0;
 
-    return { rows, middleList, rated, total, complete, avg10, avgDisplay: toDisplayScore(avg10) };
+    return {
+      rows,
+      middleList,
+      rated,
+      mgrRated,
+      total,
+      complete,
+      mgrComplete,
+      avg10,
+      mgrAvg10
+    };
   }
 
   function buildTemplateCommentary(ctx) {
@@ -115,7 +148,7 @@
       userName,
       gradeName,
       avg10,
-      avgDisplay,
+      mgrAvg10,
       tierLabel,
       middleList,
       minutes
@@ -144,7 +177,7 @@
     }
 
     const text = [
-      `${userName || "ユーザー"}さん（${gradeName}）の自己評価サマリーです。全項目の平均は5段階で ${avg10.toFixed(2)} 点（換算 ${avgDisplay.toFixed(2)} 点）で、判定は「${tierLabel}」ゾーンに該当します。`,
+      `${userName || "ユーザー"}さん（${gradeName}）の評価サマリーです。自己評価の平均は ${avg10.toFixed(2)} 点、上司評価（最終査定）の平均は ${mgrAvg10 > 0 ? mgrAvg10.toFixed(2) : "未入力"} 点で、判定は「${tierLabel}」ゾーンに該当します。`,
       `レーダーチャート上では、中項目ごとにばらつきがあり、特に力が出ている領域は ${topText} です。これらは日常業務において既に再現性のある強みとして機能している可能性が高く、チームへの展開や後輩への言語化によって組織資産へ昇華できるでしょう。`,
       `相対的に伸ばしどころとして目立つのは ${lowText} です。ここは単に点数を上げるのではなく、行動指針の「概念」と「説明」に立ち返り、どの場面でどの行動が不足していたかを具体化することが重要です。`,
       minutesBlock,
@@ -176,7 +209,7 @@
     const prompt = `あなたは人事評価に詳しいコンサルタントです。以下の自己評価データと評定MTG議事録をもとに、日本語で800文字前後の分析コメントを書いてください。丁寧で具体的に。
 
 【対象者】${ctx.userName}（${ctx.gradeName}）
-【総合平均】5段階 ${ctx.avg10.toFixed(2)} 点 / 換算 ${ctx.avgDisplay.toFixed(2)} 点 / 判定 ${ctx.tierLabel}
+【総合平均】自己評価 ${ctx.avg10.toFixed(2)} 点 / 上司評価（最終査定） ${ctx.mgrAvg10 > 0 ? ctx.mgrAvg10.toFixed(2) : "未入力"} 点 / 判定 ${ctx.tierLabel}
 【中項目別】
 ${middleSummary}
 
@@ -267,11 +300,18 @@ ${ctx.minutes || "（なし）"}`;
     });
   }
 
-  function renderPromoScale(gradeIndex, displayScore) {
+  function renderPromoScale(gradeIndex, finalScore, hasManagerScore) {
     const wrap = document.getElementById("promoScale");
     if (!wrap) return;
+
+    if (!hasManagerScore) {
+      wrap.innerHTML =
+        '<p class="promo-tier-result">上司評価が未入力のため、最終査定の判定は表示できません。評価シートで上司評価を入力・保存してください。</p>';
+      return;
+    }
+
     const isIkusei = gradeIndex === 0;
-    const tier = isIkusei ? getIkuseiTier(displayScore) : getUpperTier(displayScore);
+    const tier = isIkusei ? getIkuseiTier(finalScore) : getUpperTier(finalScore);
     const segments = isIkusei ? 2 : 5;
     const left = markerLeftPercent(tier.segment, segments);
     const img = isIkusei ? "assets/ikusei.png" : "assets/ikusei-upper.png";
@@ -284,7 +324,7 @@ ${ctx.minutes || "（なし）"}`;
           <span class="promo-marker-label">${tier.here}</span>
         </div>
       </div>
-      <p class="promo-tier-result">判定：<strong>${tier.label}</strong>（換算平均 ${displayScore.toFixed(2)} 点）</p>
+      <p class="promo-tier-result">判定：<strong>${tier.label}</strong>（上司評価点数 ${finalScore.toFixed(2)} 点）</p>
     `;
   }
 
@@ -306,7 +346,8 @@ ${ctx.minutes || "（なし）"}`;
           <td><span class="cat-dot" style="background:${theme.color}"></span>${escapeHtml(r.category)}</td>
           <td>${escapeHtml(r.middle)}</td>
           <td>${escapeHtml(r.item)}</td>
-          <td class="num">${r.rating ? (Number.isInteger(r.rating) ? r.rating : r.rating.toFixed(1)) : "—"}</td>
+          <td class="num">${formatScore(r.rating)}</td>
+          <td class="num">${formatScore(r.managerRating)}</td>
         </tr>`;
       })
       .join("");
@@ -458,7 +499,7 @@ ${ctx.minutes || "（なし）"}`;
       if (summaryUser) summaryUser.textContent = userName || "（氏名未設定）";
       if (summaryGrade) summaryGrade.textContent = gradeName;
 
-      const stats = collectSelfRatings(assessments);
+      const stats = collectRatings(assessments);
       const alertEl = document.getElementById("completionAlert");
       const mainEl = document.getElementById("summaryMain");
 
@@ -477,10 +518,17 @@ ${ctx.minutes || "（なし）"}`;
       }
 
       if (alertEl) {
+        const warnings = [];
         if (!stats.complete) {
+          warnings.push(`自己評価：入力済み ${stats.rated.length} / ${stats.total} 項目`);
+        }
+        if (stats.mgrRated.length > 0 && !stats.mgrComplete) {
+          warnings.push(`上司評価：入力済み ${stats.mgrRated.length} / ${stats.total} 項目`);
+        }
+        if (warnings.length) {
           alertEl.hidden = false;
           alertEl.className = "alert alert-warn";
-          alertEl.textContent = `入力済み ${stats.rated.length} / ${stats.total} 項目で表示しています。未入力の項目は評価シートで評価・保存してください。`;
+          alertEl.textContent = `${warnings.join("、")}。未入力の項目は評価シートで評価・保存してください。`;
         } else {
           alertEl.hidden = true;
         }
@@ -492,16 +540,21 @@ ${ctx.minutes || "（なし）"}`;
       }
 
       const avg10El = document.getElementById("avgScore10");
-      const avgDispEl = document.getElementById("avgScoreDisplay");
+      const avgMgrEl = document.getElementById("avgScoreManager");
       if (avg10El) avg10El.textContent = stats.avg10.toFixed(2);
-      if (avgDispEl) avgDispEl.textContent = stats.avgDisplay.toFixed(2);
+      if (avgMgrEl) {
+        avgMgrEl.textContent = stats.mgrAvg10 > 0 ? stats.mgrAvg10.toFixed(2) : "—";
+      }
 
+      const hasManagerScore = stats.mgrRated.length > 0;
       const tier =
-        gradeIndex === 0
-          ? getIkuseiTier(stats.avgDisplay)
-          : getUpperTier(stats.avgDisplay);
+        hasManagerScore
+          ? gradeIndex === 0
+            ? getIkuseiTier(stats.mgrAvg10)
+            : getUpperTier(stats.mgrAvg10)
+          : { label: "未判定" };
 
-      renderPromoScale(gradeIndex, stats.avgDisplay);
+      renderPromoScale(gradeIndex, stats.mgrAvg10, hasManagerScore);
       renderItemTable(stats.rows);
 
       lastStats = stats;
@@ -509,7 +562,7 @@ ${ctx.minutes || "（なし）"}`;
         userName,
         gradeName,
         avg10: stats.avg10,
-        avgDisplay: stats.avgDisplay,
+        mgrAvg10: stats.mgrAvg10,
         tierLabel: tier.label,
         middleList: stats.middleList
       };
