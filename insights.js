@@ -55,12 +55,50 @@
     return rated.reduce((a, b) => a + b, 0) / rated.length;
   }
 
-  function getUpperTier(score) {
-    if (score <= 3.0) return { label: "降格", segment: 0, here: "here（降格）" };
-    if (score < 3.4) return { label: "降級", segment: 1, here: "here（降級）" };
-    if (score < 3.7) return { label: "ステイ", segment: 2, here: "here（ステイ）" };
-    if (score < 4.0) return { label: "昇級", segment: 3, here: "here（昇級）" };
-    return { label: "昇格", segment: 4, here: "here（昇格！）" };
+  const RANK_LEVEL = { L: 1, M: 2, H: 3 };
+
+  function normalizeRank(rank) {
+    const r = String(rank || "").trim().toUpperCase();
+    return r === "L" || r === "M" || r === "H" ? r : "L";
+  }
+
+  /** 上司評価点 → スケール上のゾーン（降格 / L / M / H / 昇格） */
+  function scoreToScaleZone(score) {
+    if (score <= 3.0) {
+      return { segment: 0, targetRank: null, isDemotion: true, isTierPromo: false };
+    }
+    if (score < 3.4) {
+      return { segment: 1, targetRank: "L", isDemotion: false, isTierPromo: false };
+    }
+    if (score < 3.7) {
+      return { segment: 2, targetRank: "M", isDemotion: false, isTierPromo: false };
+    }
+    if (score < 4.0) {
+      return { segment: 3, targetRank: "H", isDemotion: false, isTierPromo: false };
+    }
+    return { segment: 4, targetRank: null, isDemotion: false, isTierPromo: true };
+  }
+
+  /** 査定MTG前のランクと点数から、昇級・降級・ステイ・昇格を判定 */
+  function getRankAwareJudgment(score, currentRank) {
+    const zone = scoreToScaleZone(score);
+    const cur = normalizeRank(currentRank);
+
+    if (zone.isDemotion) {
+      return { label: "降格", segment: zone.segment, here: "here（降格）" };
+    }
+    if (zone.isTierPromo) {
+      return { label: "昇格", segment: zone.segment, here: "here（昇格！）" };
+    }
+
+    const curLv = RANK_LEVEL[cur];
+    const tgtLv = RANK_LEVEL[zone.targetRank];
+    let label;
+    if (tgtLv > curLv) label = "昇級";
+    else if (tgtLv < curLv) label = "降級";
+    else label = "ステイ";
+
+    return { label, segment: zone.segment, here: `here（${label}）` };
   }
 
   function getIkuseiTier(score) {
@@ -303,7 +341,13 @@ ${ctx.minutes || "（なし）"}`;
   function resolveGradeContext(roomMeta) {
     const H = window.RHR_GRADES;
     if (!H) {
-      return { before: "未設定", after: "—", promoTierIndex: 0, gradeName: "未設定" };
+      return {
+        before: "未設定",
+        after: "—",
+        promoTierIndex: 0,
+        beforeRank: "L",
+        gradeName: "未設定"
+      };
     }
 
     if (roomMeta) {
@@ -313,6 +357,7 @@ ${ctx.minutes || "（なし）"}`;
         before: labels.before,
         after: labels.after || "—",
         promoTierIndex: g.beforeTierIndex,
+        beforeRank: g.beforeRank || "L",
         gradeName: labels.after || labels.before
       };
     }
@@ -322,20 +367,38 @@ ${ctx.minutes || "（なし）"}`;
     if (tier !== null && tier !== "") {
       const tierIndex = Number(tier);
       const label = H.formatGradeLabel(tierIndex, rank || "");
-      return { before: label, after: label, promoTierIndex: tierIndex, gradeName: label };
+      return {
+        before: label,
+        after: label,
+        promoTierIndex: tierIndex,
+        beforeRank: rank || "L",
+        gradeName: label
+      };
     }
 
     const legacy = localStorage.getItem(MY_GRADE_KEY) || localStorage.getItem("rhr-guideline-my-grade");
     if (legacy !== null && legacy !== "") {
       const tierIndex = H.tierIndexFromGuidelineIndex(Number(legacy));
       const label = H.formatGradeLabel(tierIndex, "");
-      return { before: label, after: label, promoTierIndex: tierIndex, gradeName: label };
+      return {
+        before: label,
+        after: label,
+        promoTierIndex: tierIndex,
+        beforeRank: "L",
+        gradeName: label
+      };
     }
 
-    return { before: "未設定", after: "—", promoTierIndex: 0, gradeName: "未設定" };
+    return {
+      before: "未設定",
+      after: "—",
+      promoTierIndex: 0,
+      beforeRank: "L",
+      gradeName: "未設定"
+    };
   }
 
-  function renderPromoScale(tierIndex, finalScore, hasManagerScore) {
+  function renderPromoScale(tierIndex, beforeRank, finalScore, hasManagerScore) {
     const wrap = document.getElementById("promoScale");
     if (!wrap) return;
 
@@ -346,7 +409,9 @@ ${ctx.minutes || "（なし）"}`;
     }
 
     const isIkusei = Number(tierIndex) === 0;
-    const tier = isIkusei ? getIkuseiTier(finalScore) : getUpperTier(finalScore);
+    const tier = isIkusei
+      ? getIkuseiTier(finalScore)
+      : getRankAwareJudgment(finalScore, beforeRank);
     const segments = isIkusei ? 2 : 5;
     const left = markerLeftPercent(tier.segment, segments);
     const img = isIkusei ? "assets/ikusei.png" : "assets/ikusei-upper.png";
@@ -581,10 +646,15 @@ ${ctx.minutes || "（なし）"}`;
         hasManagerScore
           ? gradeCtx.promoTierIndex === 0
             ? getIkuseiTier(stats.mgrAvg10)
-            : getUpperTier(stats.mgrAvg10)
+            : getRankAwareJudgment(stats.mgrAvg10, gradeCtx.beforeRank)
           : { label: "未判定" };
 
-      renderPromoScale(gradeCtx.promoTierIndex, stats.mgrAvg10, hasManagerScore);
+      renderPromoScale(
+        gradeCtx.promoTierIndex,
+        gradeCtx.beforeRank,
+        stats.mgrAvg10,
+        hasManagerScore
+      );
       renderItemTable(stats.rows);
 
       lastStats = stats;
