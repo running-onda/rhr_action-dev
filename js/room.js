@@ -8,7 +8,7 @@ export function parseQuery(search = window.location.search) {
 export function getRoomContext() {
   const q = parseQuery();
   const roomId = String(q.room || "").trim();
-  const role = String(q.role || "").trim(); // employee | manager
+  const role = String(q.role || "").trim(); // legacy; optional
   return { roomId, role };
 }
 
@@ -18,17 +18,13 @@ export function isRoomLink(search = window.location.search) {
 }
 
 export function getBaseUrl() {
-  // GitHub Pages safe base url for generating links
-  // e.g. https://host/repo/ + file.html
   const { origin, pathname } = window.location;
   const basePath = pathname.replace(/[^/]+$/, "");
   return `${origin}${basePath}`;
 }
 
-export function buildViewerUrl(roomId, role) {
+export function buildViewerUrl(roomId) {
   const base = getBaseUrl();
   const r = encodeURIComponent(roomId);
-  const ro = encodeURIComponent(role);
-  return `${base}viewer.html?room=${r}&role=${ro}`;
+  return `${base}viewer.html?room=${r}`;
 }
-

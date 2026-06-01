@@ -74,8 +74,20 @@
   <script>
     (function () {
       var K = window.APP_ENV.authSessionKey;
-      if (sessionStorage.getItem(K) !== "1") return;
-      document.body.classList.remove("is-locked");
+      function unlockIfAuthed() {
+        if (sessionStorage.getItem(K) !== "1") return;
+        document.documentElement.classList.add("auth-session-ok");
+        document.body.classList.remove("is-locked");
+        var gate = document.getElementById("authGate");
+        var app = document.getElementById("appContent");
+        if (gate) gate.hidden = true;
+        if (app) {
+          app.hidden = false;
+          app.removeAttribute("inert");
+          app.removeAttribute("aria-hidden");
+        }
+      }
+      document.addEventListener("DOMContentLoaded", unlockIfAuthed);
     })();
   </script>
 
@@ -118,6 +130,7 @@
           <p class="meta" id="meta">—</p>
         </div>
         <div>
+          <button type="button" class="btn btn-primary" id="openViewerBtn" hidden>評価シートを開く</button>
           <button type="button" class="btn btn-primary" id="backBtn">一覧へ戻る</button>
         </div>
       </div>
@@ -164,64 +177,64 @@
     const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
 
     async function hashPassword(text) {
-      const buf = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(text));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, \"0\")).join(\"\");
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
     function unlockApp() {
-      sessionStorage.setItem(AUTH_SESSION_KEY, \"1\");
-      document.documentElement.classList.add(\"auth-session-ok\");
-      document.body.classList.remove(\"is-locked\");
-      const gate = document.getElementById(\"authGate\");
+      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+      document.documentElement.classList.add("auth-session-ok");
+      document.body.classList.remove("is-locked");
+      const gate = document.getElementById("authGate");
       gate.hidden = true;
-      const app = document.getElementById(\"appContent\");
+      const app = document.getElementById("appContent");
       app.hidden = false;
-      app.removeAttribute(\"inert\");
-      app.removeAttribute(\"aria-hidden\");
+      app.removeAttribute("inert");
+      app.removeAttribute("aria-hidden");
     }
 
     function lockApp() {
       sessionStorage.removeItem(AUTH_SESSION_KEY);
-      sessionStorage.removeItem(\"rhr_guideline_auth_v1\");
-      sessionStorage.removeItem(\"rhr_guideline_auth_v2\");
-      document.documentElement.classList.remove(\"auth-session-ok\");
-      document.body.classList.add(\"is-locked\");
-      const gate = document.getElementById(\"authGate\");
+      sessionStorage.removeItem("rhr_guideline_auth_v1");
+      sessionStorage.removeItem("rhr_guideline_auth_v2");
+      document.documentElement.classList.remove("auth-session-ok");
+      document.body.classList.add("is-locked");
+      const gate = document.getElementById("authGate");
       gate.hidden = false;
-      const app = document.getElementById(\"appContent\");
+      const app = document.getElementById("appContent");
       app.hidden = true;
-      app.setAttribute(\"inert\", \"\");
-      app.setAttribute(\"aria-hidden\", \"true\");
-      document.getElementById(\"authPassword\").value = \"\";
-      document.getElementById(\"authError\").textContent = \"\";
+      app.setAttribute("inert", "");
+      app.setAttribute("aria-hidden", "true");
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
     }
 
     function initAuthGate(onUnlock) {
-      const form = document.getElementById(\"authForm\");
-      const input = document.getElementById(\"authPassword\");
-      const errEl = document.getElementById(\"authError\");
+      const form = document.getElementById("authForm");
+      const input = document.getElementById("authPassword");
+      const errEl = document.getElementById("authError");
 
-      if (sessionStorage.getItem(AUTH_SESSION_KEY) === \"1\") {
+      if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
         unlockApp();
         onUnlock();
         return;
       }
 
       input.focus();
-      form.addEventListener(\"submit\", async e => {
+      form.addEventListener("submit", async e => {
         e.preventDefault();
-        errEl.textContent = \"\";
+        errEl.textContent = "";
         const hash = await hashPassword(input.value);
         if (hash === ACCESS_PASSWORD_HASH) {
           unlockApp();
           onUnlock();
         } else {
-          errEl.textContent = \"パスワードが違います。\";
+          errEl.textContent = "パスワードが違います。";
           input.select();
         }
       });
 
-      document.getElementById(\"logoutBtn\").addEventListener(\"click\", () => {
+      document.getElementById("logoutBtn").addEventListener("click", () => {
         lockApp();
         input.focus();
       });

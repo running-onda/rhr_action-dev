@@ -48,13 +48,11 @@ function renderGradeOptions() {
 }
 
 function setResult(roomId) {
-  const employeeUrl = buildViewerUrl(roomId, "employee");
-  const managerUrl = buildViewerUrl(roomId, "manager");
+  const roomUrl = buildViewerUrl(roomId);
 
   $("createResult").hidden = false;
   $("roomIdOut").textContent = roomId;
-  $("employeeUrlOut").textContent = employeeUrl;
-  $("managerUrlOut").textContent = managerUrl;
+  $("roomUrlOut").textContent = roomUrl;
 }
 
 async function refreshRooms() {
@@ -69,18 +67,13 @@ async function refreshRooms() {
 
     tbody.innerHTML = rooms
       .map(r => {
-        const employeeUrl = buildViewerUrl(r.roomId, "employee");
-        const managerUrl = buildViewerUrl(r.roomId, "manager");
+        const roomUrl = buildViewerUrl(r.roomId);
         return `<tr>
           <td>${escapeHtml(r.employeeName || "")}</td>
           <td>${escapeHtml(r.gradeName || "")}</td>
           <td class="mono">${escapeHtml(r.roomId || "")}</td>
           <td>${escapeHtml(formatDt(r.updatedAt))}</td>
-          <td>
-            <a href="${escapeHtml(employeeUrl)}">社員</a>
-            /
-            <a href="${escapeHtml(managerUrl)}">上司</a>
-          </td>
+          <td><a href="${escapeHtml(roomUrl)}">評価シート</a></td>
         </tr>`;
       })
       .join("");

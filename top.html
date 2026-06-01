@@ -478,7 +478,7 @@
 
     <main>
       <h2 class="page-title">評定ルーム作成</h2>
-      <p class="page-sub">社員用URLと上司用URLを発行し、同じ roomId に対して評価を保存します（GAS + スプレッドシート）。</p>
+      <p class="page-sub">評価シートURLを1つ発行し、同じ roomId に対して本人・上司の評価を保存します（GAS + スプレッドシート）。</p>
 
       <div class="notice" id="apiNotice" hidden>GAS API が未設定です。`env.js` の `apiUrl` / `apiToken` を設定してください。</div>
 
@@ -505,14 +505,9 @@
           <div class="result" id="createResult" hidden>
             <div><strong>roomId</strong>: <span class="mono" id="roomIdOut">—</span></div>
             <div class="urlrow">
-              <div><strong>社員用URL</strong></div>
-              <div class="mono" id="employeeUrlOut">—</div>
-              <button type="button" class="btn-copy" data-copy-from="employeeUrlOut">コピー</button>
-            </div>
-            <div class="urlrow">
-              <div><strong>上司用URL</strong></div>
-              <div class="mono" id="managerUrlOut">—</div>
-              <button type="button" class="btn-copy" data-copy-from="managerUrlOut">コピー</button>
+              <div><strong>評価シートURL</strong></div>
+              <div class="mono" id="roomUrlOut">—</div>
+              <button type="button" class="btn-copy" data-copy-from="roomUrlOut">コピー</button>
             </div>
           </div>
         </section>

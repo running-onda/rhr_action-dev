@@ -62,7 +62,11 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const body = parseBody_(e);
+    let body = parseBody_(e);
+    if (e && e.parameter) {
+      body = Object.assign({}, e.parameter, body);
+    }
+    body = normalizePostBody_(body);
 
     const token = body.token || (e && e.parameter && e.parameter.token) || "";
     assertToken(token);
@@ -325,6 +329,17 @@ function getRoomSummary_(body) {
 // -------------------------
 // Helpers
 // -------------------------
+
+function normalizePostBody_(body) {
+  if (body && body.rowsJson && !body.rows) {
+    try {
+      body.rows = JSON.parse(String(body.rowsJson));
+    } catch (err) {
+      throw new Error("VALIDATION_ERROR: rowsJson");
+    }
+  }
+  return body || {};
+}
 
 function parseBody_(e) {
   const raw = (e && e.postData && e.postData.contents) ? e.postData.contents : "";

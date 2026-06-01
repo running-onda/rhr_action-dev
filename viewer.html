@@ -1561,7 +1561,43 @@
           comment: s.comment || ""
         }));
       }
-      return [{ name: "", rating: 0, comment: "" }];
+      const defaultManager = roomMeta?.managerName || "";
+      return [{ name: defaultManager, rating: 0, comment: "" }];
+    }
+
+    function buildSaveRows(key, d, data) {
+      const rows = [];
+      rows.push({
+        itemKey: key,
+        category: d.category,
+        middle: d.middle,
+        item: d.item,
+        evaluatorRole: "employee",
+        supervisorIndex: 0,
+        supervisorName: "",
+        rating: Number(data.selfRating || 0),
+        comment: data.selfComment || ""
+      });
+      (data.supervisors || []).forEach((sup, i) => {
+        rows.push({
+          itemKey: key,
+          category: d.category,
+          middle: d.middle,
+          item: d.item,
+          evaluatorRole: "manager",
+          supervisorIndex: i,
+          supervisorName: sup.name || "",
+          rating: Number(sup.rating || 0),
+          comment: sup.comment || ""
+        });
+      });
+      return rows;
+    }
+
+    async function reloadAssessmentsFromApi() {
+      const res = await getAssessment(roomId);
+      roomMeta = res.room || roomMeta;
+      assessments = res.assessments || {};
     }
 
     function renderSupervisorBlock(sup, index) {
@@ -1695,36 +1731,8 @@
           const d = dataIndexByKey[key];
           if (!d) throw new Error("ITEM_NOT_FOUND");
 
-          if (String(role) === "manager") {
-            for (let i = 0; i < (data.supervisors || []).length; i++) {
-              const sup = data.supervisors[i];
-              await saveAssessment({
-                roomId,
-                itemKey: key,
-                category: d.category,
-                middle: d.middle,
-                item: d.item,
-                evaluatorRole: "manager",
-                supervisorIndex: i,
-                supervisorName: sup.name || "",
-                rating: Number(sup.rating || 0),
-                comment: sup.comment || ""
-              });
-            }
-          } else {
-            await saveAssessment({
-              roomId,
-              itemKey: key,
-              category: d.category,
-              middle: d.middle,
-              item: d.item,
-              evaluatorRole: "employee",
-              supervisorIndex: 0,
-              supervisorName: "",
-              rating: Number(data.selfRating || 0),
-              comment: data.selfComment || ""
-            });
-          }
+          await saveAssessmentBatch(roomId, buildSaveRows(key, d, data));
+          await reloadAssessmentsFromApi();
 
           assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
           markBlockSaved(block, now);
@@ -1757,40 +1765,14 @@
             const d = dataIndexByKey[key];
             if (!d) continue;
             const data = readAssessFromBlock(block);
-
-            if (String(role) === "manager") {
-              (data.supervisors || []).forEach((sup, i) => {
-                rows.push({
-                  itemKey: key,
-                  category: d.category,
-                  middle: d.middle,
-                  item: d.item,
-                  evaluatorRole: "manager",
-                  supervisorIndex: i,
-                  supervisorName: sup.name || "",
-                  rating: Number(sup.rating || 0),
-                  comment: sup.comment || ""
-                });
-              });
-            } else {
-              rows.push({
-                itemKey: key,
-                category: d.category,
-                middle: d.middle,
-                item: d.item,
-                evaluatorRole: "employee",
-                supervisorIndex: 0,
-                supervisorName: "",
-                rating: Number(data.selfRating || 0),
-                comment: data.selfComment || ""
-              });
-            }
-
+            rows.push(...buildSaveRows(key, d, data));
             assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
             markBlockSaved(block, now);
           }
 
           await saveAssessmentBatch(roomId, rows);
+          await reloadAssessmentsFromApi();
+          renderAndBind();
           showToast("保存済（すべて）");
           return;
         }
@@ -1846,39 +1828,26 @@
 
     const dataIndexByKey = Object.fromEntries((window.GUIDELINE_DATA || []).map(d => [`${d.category}::${d.item}`, d]));
 
-    function applyRoleUi() {
-      if (!roomId) return;
-      const r = String(role || "");
-      if (r === "manager") {
-        // self read-only
-        itemsEl.querySelectorAll(".eval-self textarea, .eval-self .rating-dot").forEach(el => {
-          el.setAttribute("disabled", "true");
-        });
-      } else {
-        // supervisors read-only
-        itemsEl.querySelectorAll(".supervisors-list textarea, .supervisors-list input, .supervisors-list .rating-dot").forEach(el => {
-          el.setAttribute("disabled", "true");
-        });
-        itemsEl.querySelectorAll(".btn-add-supervisor, .btn-remove-supervisor").forEach(el => (el.style.display = "none"));
-      }
-    }
-
     async function initRoomAndRender() {
       if (roomId && apiEnabled) {
-        const res = await getAssessment(roomId);
-        roomMeta = res.room || null;
-        assessments = res.assessments || {};
-        if (roomMeta) {
-          userNameInput.value = roomMeta.employeeName || "";
-          userNameInput.disabled = true;
-          myGradeSelect.value = String(Number(roomMeta.gradeIndex || 0));
-          myGradeSelect.disabled = true;
+        try {
+          const res = await getAssessment(roomId);
+          roomMeta = res.room || null;
+          assessments = res.assessments || {};
+          if (roomMeta) {
+            userNameInput.value = roomMeta.employeeName || "";
+            userNameInput.disabled = true;
+            myGradeSelect.value = String(Number(roomMeta.gradeIndex || 0));
+            myGradeSelect.disabled = true;
+          }
+        } catch (e) {
+          alert("評価データの読み込みに失敗しました: " + (e?.message || String(e)));
+          assessments = {};
         }
       } else {
         assessments = loadAssessmentsLocal();
       }
       renderAndBind();
-      applyRoleUi();
     }
 
     initAuthGate(() => initRoomAndRender());

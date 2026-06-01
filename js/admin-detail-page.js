@@ -1,4 +1,5 @@
 import { apiCall } from "./api.js";
+import { buildViewerUrl } from "./room.js";
 
 function $(id) {
   return document.getElementById(id);
@@ -51,6 +52,27 @@ function renderComments(comments) {
     .join("");
 }
 
+function waitForAppUnlock() {
+  return new Promise(resolve => {
+    const app = $("appContent");
+    if (app && !app.hidden) {
+      resolve();
+      return;
+    }
+    const obs = new MutationObserver(() => {
+      if (app && !app.hidden) {
+        obs.disconnect();
+        resolve();
+      }
+    });
+    if (app) obs.observe(app, { attributes: true, attributeFilter: ["hidden"] });
+    setTimeout(() => {
+      obs.disconnect();
+      resolve();
+    }, 3000);
+  });
+}
+
 async function init() {
   const roomId = getRoomId();
   $("backBtn").addEventListener("click", () => (window.location.href = "admin.html"));
@@ -60,6 +82,14 @@ async function init() {
     $("err").textContent = "roomId が指定されていません。";
     return;
   }
+
+  const openBtn = $("openViewerBtn");
+  openBtn.hidden = false;
+  openBtn.addEventListener("click", () => {
+    window.location.href = buildViewerUrl(roomId);
+  });
+
+  await waitForAppUnlock();
 
   try {
     const res = await apiCall("getRoomSummary", { roomId });
@@ -111,4 +141,3 @@ async function init() {
 }
 
 init();
-
