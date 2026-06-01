@@ -49,6 +49,49 @@ function matchQuery(d, q) {
   return hay.includes(q);
 }
 
+function groupKey(d) {
+  return `${d.category}::${d.middle}`;
+}
+
+function renderCriteria(steps) {
+  const items = (steps || [])
+    .map((text, i) => {
+      const grade = grades[i];
+      if (!grade) return "";
+      return `<div class="criteria-row">
+        <span class="grade-label g${i}">${escapeHtml(grade.name)}</span>
+        <div class="criteria-text">${escapeHtml(text)}</div>
+      </div>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  return `<div class="criteria-list">${items}</div>`;
+}
+
+function renderStepsCell(steps) {
+  if (collapsed) {
+    return `<span class="toggle" data-expand="1">表示する</span>`;
+  }
+  return renderCriteria(steps);
+}
+
+function buildGroups(rows) {
+  const groups = [];
+  let current = null;
+
+  rows.forEach(row => {
+    const key = groupKey(row);
+    if (!current || current.key !== key) {
+      current = { key, category: row.category, middle: row.middle, items: [] };
+      groups.push(current);
+    }
+    current.items.push(row);
+  });
+
+  return groups;
+}
+
 function render() {
   const q = $("q").value.trim().toLowerCase();
   const cat = $("cat").value;
@@ -62,25 +105,29 @@ function render() {
     return;
   }
 
-  tbody.innerHTML = rows
-    .map(d => {
-      const steps = (d.steps || [])
-        .map((s, i) => `${grades[i]?.name || `G${i + 1}`}: ${s}`)
-        .join("\n");
+  const html = buildGroups(rows)
+    .map(group => {
+      const span = group.items.length;
+      return group.items
+        .map((d, index) => {
+          const groupCells =
+            index === 0
+              ? `<td class="cell-group cell-group-major" rowspan="${span}">${escapeHtml(group.category)}</td>
+                 <td class="cell-group cell-group-middle" rowspan="${span}">${escapeHtml(group.middle)}</td>`
+              : "";
 
-      const stepsCell = collapsed
-        ? `<span class="toggle" data-expand="1">表示する</span>`
-        : `<div class="steps">${escapeHtml(steps)}</div>`;
-
-      return `<tr>
-        <td>${escapeHtml(d.category)}</td>
-        <td>${escapeHtml(d.middle)}</td>
-        <td><strong>${escapeHtml(d.item)}</strong></td>
-        <td><div class="desc">${escapeHtml(d.description || "")}</div></td>
-        <td>${stepsCell}</td>
-      </tr>`;
+          return `<tr>
+            ${groupCells}
+            <td class="cell-item">${escapeHtml(d.item)}</td>
+            <td><div class="desc">${escapeHtml(d.description || "")}</div></td>
+            <td>${renderStepsCell(d.steps)}</td>
+          </tr>`;
+        })
+        .join("");
     })
     .join("");
+
+  tbody.innerHTML = html;
 
   if (collapsed) {
     tbody.querySelectorAll("[data-expand]").forEach(a => {
@@ -106,4 +153,3 @@ function init() {
 }
 
 init();
-

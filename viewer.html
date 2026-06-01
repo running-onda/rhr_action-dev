@@ -83,6 +83,58 @@
       gap: 12px 16px;
     }
 
+    .header-sub {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+
+    .nav-links a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      color: var(--ink-secondary);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      white-space: nowrap;
+    }
+
+    .nav-links a.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .header-sub .header-fields {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .header-sub .header-actions {
+      flex-shrink: 0;
+    }
+
     .brand-block {
       display: flex;
       align-items: center;
@@ -111,10 +163,9 @@
       flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 8px;
       margin-left: auto;
-      flex: 1 1 auto;
-      min-width: 0;
+      flex-shrink: 0;
     }
 
     .header-fields {
@@ -134,6 +185,8 @@
       min-width: 0;
     }
 
+    .header-sub select,
+    .header-sub input,
     .header-toolbar select,
     .header-toolbar input {
       min-width: 0;
@@ -860,20 +913,34 @@
 
     @media (max-width: 900px) {
       .header-inner {
-        flex-direction: column;
-        align-items: stretch;
         flex-wrap: wrap;
+        padding-bottom: 0;
       }
 
       .header-toolbar {
         margin-left: 0;
+        flex: 1 1 100%;
         justify-content: flex-start;
         flex-wrap: wrap;
+      }
+
+      .nav-links {
+        flex-wrap: wrap;
+      }
+
+      .header-sub {
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .header-fields,
       .header-actions {
         flex-wrap: wrap;
+        width: 100%;
+      }
+
+      .header-sub .header-actions {
+        justify-content: flex-start;
       }
 
       .toolbar-group {
@@ -1058,7 +1125,17 @@
         </div>
       </div>
       <div class="header-toolbar">
-        <div class="header-fields">
+        <nav class="nav-links" aria-label="ページ">
+          <a href="top.html">TOP</a>
+          <a href="viewer.html" class="active">評価シート</a>
+          <a href="items.html">項目一覧</a>
+          <a href="admin.html">管理画面</a>
+        </nav>
+        <button type="button" class="btn-header btn-header-ghost" id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+    <div class="header-sub">
+      <div class="header-fields">
         <div class="toolbar-group">
           <label for="userName">氏名</label>
           <input id="userName" type="text" placeholder="名前を入力" autocomplete="name" />
@@ -1075,16 +1152,11 @@
             <option value="all">全職級を表示</option>
           </select>
         </div>
-        </div>
-        <div class="header-actions">
-          <a href="top.html" class="btn-header btn-header-ghost">TOP</a>
-          <a href="items.html" class="btn-header btn-header-ghost">項目一覧</a>
-          <a href="admin.html" class="btn-header btn-header-ghost">管理画面</a>
-          <a href="insights.html" class="btn-header btn-header-secondary">評価サマリー</a>
-          <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
-          <button type="button" class="btn-header btn-header-ghost" id="logoutBtn">ログアウト</button>
-          <span class="save-toast" id="saveToast" aria-live="polite"></span>
-        </div>
+      </div>
+      <div class="header-actions">
+        <a href="insights.html" class="btn-header btn-header-secondary">評価サマリー</a>
+        <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
+        <span class="save-toast" id="saveToast" aria-live="polite"></span>
       </div>
     </div>
   </header>
