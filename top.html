@@ -433,6 +433,47 @@
 
     .auth-submit:hover { opacity: 0.92; }
 
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245, 244, 240, 0.82);
+      backdrop-filter: blur(2px);
+    }
+    .loading-overlay[hidden] { display: none !important; }
+    .loading-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(26, 39, 68, 0.08);
+    }
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(26, 39, 68, 0.12);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin-loader 0.8s linear infinite;
+    }
+    @keyframes spin-loader {
+      to { transform: rotate(360deg); }
+    }
+    .loading-message {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      letter-spacing: 0.04em;
+    }
+
     @media (max-width: 980px) {
       .grid { grid-template-columns: 1fr; }
       .field { grid-template-columns: 1fr; }
@@ -450,6 +491,13 @@
       document.body.classList.remove("is-locked");
     })();
   </script>
+
+  <div id="loadingOverlay" class="loading-overlay" hidden aria-live="polite" aria-busy="true">
+    <div class="loading-box">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p class="loading-message" id="loadingMessage">処理中…</p>
+    </div>
+  </div>
 
   <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
     <div class="auth-card">

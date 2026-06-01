@@ -35,6 +35,18 @@ function setBusy(b) {
   $("refreshBtn").disabled = b;
 }
 
+function showLoading(message = "処理中…") {
+  const overlay = $("loadingOverlay");
+  const msg = $("loadingMessage");
+  if (msg) msg.textContent = message;
+  if (overlay) overlay.hidden = false;
+}
+
+function hideLoading() {
+  const overlay = $("loadingOverlay");
+  if (overlay) overlay.hidden = true;
+}
+
 function syncRankSelect() {
   const tierIndex = Number($("gradeTierSelect").value);
   const tier = GRADE_TIERS[tierIndex];
@@ -69,6 +81,7 @@ function setResult(roomId) {
 async function refreshRooms() {
   const tbody = $("roomsBody");
   tbody.innerHTML = `<tr><td colspan="6">読み込み中…</td></tr>`;
+  showLoading("ルーム一覧を読み込んでいます…");
   try {
     const rooms = await getRooms(200);
     if (!rooms.length) {
@@ -92,6 +105,8 @@ async function refreshRooms() {
       .join("");
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="6">取得に失敗しました: ${escapeHtml(formatApiError(e))}</td></tr>`;
+  } finally {
+    hideLoading();
   }
 }
 
@@ -108,6 +123,7 @@ async function onCreateRoom() {
   }
 
   setBusy(true);
+  showLoading("ルームを作成しています…");
   try {
     const r = await createRoom({
       employeeName,
@@ -122,6 +138,7 @@ async function onCreateRoom() {
     alert(`ルーム作成に失敗しました:\n${formatApiError(e)}`);
   } finally {
     setBusy(false);
+    hideLoading();
   }
 }
 

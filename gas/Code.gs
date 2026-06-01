@@ -35,12 +35,7 @@ function doGet(e) {
     let data;
     switch (action) {
       case "createRoom":
-        data = createRoom_({
-          employeeName: body.employeeName,
-          managerName: body.managerName,
-          gradeIndex: Number(body.gradeIndex),
-          gradeName: body.gradeName
-        });
+        data = createRoom_(body);
         break;
       case "getAssessment":
         data = getAssessment_({ roomId: body.roomId });
@@ -109,16 +104,26 @@ function assertToken(token) {
   }
 }
 
+function parseGradeTierIndex_(body) {
+  const tiersMax = 5;
+  let raw = body.gradeTierIndex;
+  if (raw === undefined || raw === null || String(raw).trim() === "") {
+    raw = body.gradeIndex;
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(Math.floor(n), tiersMax));
+}
+
 function createRoom_(body) {
   const employeeName = String(body.employeeName || "").trim();
   const managerName = String(body.managerName || "").trim();
-  const gradeTierIndex = Number(body.gradeTierIndex ?? body.gradeIndex ?? 0);
+  const gradeTierIndex = parseGradeTierIndex_(body);
   const gradeRank = normalizeGradeRank_(body.gradeRank, gradeTierIndex);
   const gradeIndex = guidelineIndexForTier_(gradeTierIndex);
   const gradeName = formatGradeLabel_(gradeTierIndex, gradeRank);
 
   if (!employeeName) throw new Error("VALIDATION_ERROR: employeeName");
-  if (!Number.isFinite(gradeTierIndex)) throw new Error("VALIDATION_ERROR: gradeTierIndex");
 
   const ss = getSs_();
   const sh = ss.getSheetByName(SHEET_ROOMS);
