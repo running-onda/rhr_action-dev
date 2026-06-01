@@ -1,4 +1,19 @@
 import { getAssessment, isApiEnabled } from "./assessment-store.js";
+import {
+  roomGradeLabels,
+  normalizeRoomGrade,
+  formatGradeLabel,
+  guidelineIndexForTier,
+  tierIndexFromGuidelineIndex
+} from "./grades.js";
+
+window.RHR_GRADES = {
+  roomGradeLabels,
+  normalizeRoomGrade,
+  formatGradeLabel,
+  guidelineIndexForTier,
+  tierIndexFromGuidelineIndex
+};
 
 const ROOM_SESSION_KEY = "rhr-current-room-id";
 

@@ -1,5 +1,6 @@
 import { apiCall } from "./api.js";
 import { deleteRoom } from "./assessment-store.js";
+import { roomGradeLabels } from "./grades.js";
 
 function $(id) {
   return document.getElementById(id);
@@ -37,18 +38,20 @@ function render(rows) {
   $("count").textContent = String(rows.length);
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="7">データがありません。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8">データがありません。</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rows
     .map(r => {
       const roomId = r.roomId || "";
+      const labels = roomGradeLabels(r);
       const detailUrl = `admin-detail.html?room=${encodeURIComponent(roomId)}`;
       const isDeleting = deletingRoomId === roomId;
       return `<tr>
         <td>${escapeHtml(r.employeeName || "")}</td>
-        <td>${escapeHtml(r.gradeName || "")}</td>
+        <td>${escapeHtml(labels.before)}</td>
+        <td>${escapeHtml(labels.after || "—")}</td>
         <td class="mono">${escapeHtml(roomId)}</td>
         <td class="num">${escapeHtml(fmtAvg(r.selfAvg))}</td>
         <td class="num">${escapeHtml(fmtAvg(r.managerAvg))}</td>
@@ -69,7 +72,8 @@ function applyFilter() {
     return;
   }
   const filtered = allRows.filter(r => {
-    const hay = `${r.employeeName || ""} ${r.roomId || ""} ${r.gradeName || ""}`.toLowerCase();
+    const labels = roomGradeLabels(r);
+    const hay = `${r.employeeName || ""} ${r.roomId || ""} ${labels.before} ${labels.after}`.toLowerCase();
     return hay.includes(q);
   });
   render(filtered);
@@ -102,7 +106,7 @@ async function removeRoom(roomId) {
 
 async function refresh() {
   $("err").hidden = true;
-  $("tbody").innerHTML = `<tr><td colspan="7">読み込み中…</td></tr>`;
+  $("tbody").innerHTML = `<tr><td colspan="8">読み込み中…</td></tr>`;
   try {
     const rows = await apiCall("getRoomSummary", { limit: 300 });
     allRows = Array.isArray(rows) ? rows : [];

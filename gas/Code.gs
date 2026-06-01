@@ -86,6 +86,8 @@ function doPost(e) {
         return jsonOk_(saveAssessmentBatch_(body));
       case "deleteRoom":
         return jsonOk_(deleteRoom_(body));
+      case "updateRoomGrade":
+        return jsonOk_(updateRoomGrade_(body));
       case "getAssessment":
         return jsonOk_(getAssessment_(body));
       case "getRooms":
@@ -110,40 +112,101 @@ function assertToken(token) {
 function createRoom_(body) {
   const employeeName = String(body.employeeName || "").trim();
   const managerName = String(body.managerName || "").trim();
-  const gradeIndex = Number(body.gradeIndex);
-  const gradeName = String(body.gradeName || "").trim();
+  const gradeTierIndex = Number(body.gradeTierIndex ?? body.gradeIndex ?? 0);
+  const gradeRank = normalizeGradeRank_(body.gradeRank, gradeTierIndex);
+  const gradeIndex = guidelineIndexForTier_(gradeTierIndex);
+  const gradeName = formatGradeLabel_(gradeTierIndex, gradeRank);
 
   if (!employeeName) throw new Error("VALIDATION_ERROR: employeeName");
-  if (!Number.isFinite(gradeIndex)) throw new Error("VALIDATION_ERROR: gradeIndex");
+  if (!Number.isFinite(gradeTierIndex)) throw new Error("VALIDATION_ERROR: gradeTierIndex");
 
   const ss = getSs_();
   const sh = ss.getSheetByName(SHEET_ROOMS);
+  ensureRoomsColumns_(sh);
 
   const now = new Date();
   const roomId = generateRoomId_(id => hasRoomId_(sh, id));
   const status = "active";
 
-  sh.appendRow([
-    roomId,
-    employeeName,
-    gradeIndex,
-    gradeName,
-    managerName,
-    status,
-    now,
-    now
-  ]);
-
-  return {
+  const row = buildRoomRow_({
     roomId: roomId,
     employeeName: employeeName,
     gradeIndex: gradeIndex,
     gradeName: gradeName,
     managerName: managerName,
     status: status,
+    createdAt: now,
+    updatedAt: now,
+    gradeTierIndex: gradeTierIndex,
+    gradeRank: gradeRank,
+    gradeBeforeTierIndex: gradeTierIndex,
+    gradeBeforeRank: gradeRank,
+    gradeAfterTierIndex: "",
+    gradeAfterRank: ""
+  });
+  sh.appendRow(row);
+
+  return {
+    roomId: roomId,
+    employeeName: employeeName,
+    gradeIndex: gradeIndex,
+    gradeName: gradeName,
+    gradeTierIndex: gradeTierIndex,
+    gradeRank: gradeRank,
+    gradeBeforeTierIndex: gradeTierIndex,
+    gradeBeforeRank: gradeRank,
+    gradeAfterTierIndex: "",
+    gradeAfterRank: "",
+    gradeLabelBefore: formatGradeLabel_(gradeTierIndex, gradeRank),
+    gradeLabelAfter: "",
+    managerName: managerName,
+    status: status,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString()
   };
+}
+
+function updateRoomGrade_(body) {
+  const roomId = String(body.roomId || "").trim();
+  if (!roomId) throw new Error("VALIDATION_ERROR: roomId");
+
+  const ss = getSs_();
+  const sh = ss.getSheetByName(SHEET_ROOMS);
+  ensureRoomsColumns_(sh);
+  const idx = indexMapRooms_(sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]);
+  const rowNum = findRoomRowNum_(sh, roomId, idx);
+  if (rowNum < 0) throw new Error("NOT_FOUND");
+
+  const now = new Date();
+  const values = sh.getRange(rowNum, 1, 1, sh.getLastColumn()).getValues()[0];
+  const current = roomRowToObj_(values, idx);
+
+  const tierIndex = body.gradeTierIndex !== undefined
+    ? Number(body.gradeTierIndex)
+    : current.gradeTierIndex;
+  const rank = body.gradeRank !== undefined
+    ? normalizeGradeRank_(body.gradeRank, tierIndex)
+    : current.gradeRank;
+
+  let afterTierIndex = current.gradeAfterTierIndex;
+  let afterRank = current.gradeAfterRank;
+  if (body.gradeAfterTierIndex !== undefined && body.gradeAfterTierIndex !== "") {
+    afterTierIndex = Number(body.gradeAfterTierIndex);
+    afterRank = normalizeGradeRank_(body.gradeAfterRank, afterTierIndex);
+  }
+
+  values[idx.grade_tier_index] = tierIndex;
+  values[idx.grade_rank] = rank;
+  values[idx.grade_index] = guidelineIndexForTier_(tierIndex);
+  values[idx.grade_name] = formatGradeLabel_(tierIndex, rank);
+  if (idx.grade_after_tier_index >= 0 && afterTierIndex !== null && afterTierIndex !== "") {
+    values[idx.grade_after_tier_index] = afterTierIndex;
+    values[idx.grade_after_rank] = afterRank;
+  }
+  values[idx.updated_at] = now;
+
+  sh.getRange(rowNum, 1, 1, values.length).setValues([values]);
+  return roomRowToObj_(values, idx);
 }
 
 function saveAssessment_(body) {
@@ -569,13 +632,94 @@ function findRowByKey_(sheet, key, keyCol) {
 function touchRoomUpdatedAt_(roomId, now) {
   const ss = getSs_();
   const rooms = ss.getSheetByName(SHEET_ROOMS);
-  const values = rooms.getDataRange().getValues();
+  ensureRoomsColumns_(rooms);
+  const header = rooms.getRange(1, 1, 1, rooms.getLastColumn()).getValues()[0];
+  const idx = indexMapRooms_(header);
+  const rowNum = findRoomRowNum_(rooms, roomId, idx);
+  if (rowNum < 0) return;
+  rooms.getRange(rowNum, idx.updated_at + 1).setValue(now);
+}
+
+function findRoomRowNum_(roomsSheet, roomId, idx) {
+  const values = roomsSheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0] || "") === roomId) {
-      rooms.getRange(i + 1, 8).setValue(now); // updated_at col
-      return;
-    }
+    if (String(values[i][idx.room_id] || "") === roomId) return i + 1;
   }
+  return -1;
+}
+
+function guidelineIndexForTier_(tierIndex) {
+  const map = [0, 1, 2, 3, 4, 6];
+  const i = Number(tierIndex);
+  return map[i] !== undefined ? map[i] : 0;
+}
+
+function formatGradeLabel_(tierIndex, rank) {
+  const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "名球会"];
+  const i = Number(tierIndex);
+  const name = tiers[i] || "育成";
+  const r = String(rank || "").trim().toUpperCase();
+  if (i === 0 || !r) return name;
+  return name + r;
+}
+
+function normalizeGradeRank_(rank, tierIndex) {
+  const i = Number(tierIndex);
+  if (i === 0) return "";
+  const r = String(rank || "").trim().toUpperCase();
+  if (r === "L" || r === "M" || r === "H") return r;
+  return "L";
+}
+
+function ensureRoomsColumns_(roomsSheet) {
+  const lastCol = Math.max(1, roomsSheet.getLastColumn());
+  const header = roomsSheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const required = [
+    "room_id",
+    "employee_name",
+    "grade_index",
+    "grade_name",
+    "manager_name",
+    "status",
+    "created_at",
+    "updated_at",
+    "grade_tier_index",
+    "grade_rank",
+    "grade_before_tier_index",
+    "grade_before_rank",
+    "grade_after_tier_index",
+    "grade_after_rank"
+  ];
+  let changed = false;
+  required.forEach(col => {
+    if (header.indexOf(col) < 0) {
+      header.push(col);
+      changed = true;
+    }
+  });
+  if (changed) {
+    roomsSheet.getRange(1, 1, 1, header.length).setValues([header]);
+  }
+}
+
+function buildRoomRow_(o) {
+  const headerLen = 14;
+  const row = new Array(headerLen).fill("");
+  row[0] = o.roomId;
+  row[1] = o.employeeName;
+  row[2] = o.gradeIndex;
+  row[3] = o.gradeName;
+  row[4] = o.managerName;
+  row[5] = o.status;
+  row[6] = o.createdAt;
+  row[7] = o.updatedAt;
+  row[8] = o.gradeTierIndex;
+  row[9] = o.gradeRank;
+  row[10] = o.gradeBeforeTierIndex;
+  row[11] = o.gradeBeforeRank;
+  row[12] = o.gradeAfterTierIndex;
+  row[13] = o.gradeAfterRank;
+  return row;
 }
 
 function getRoomById_(roomsSheet, roomId) {
@@ -593,16 +737,71 @@ function getRoomById_(roomsSheet, roomId) {
 function roomRowToObj_(row, idx) {
   const createdAt = row[idx.created_at] instanceof Date ? row[idx.created_at].toISOString() : "";
   const updatedAt = row[idx.updated_at] instanceof Date ? row[idx.updated_at].toISOString() : "";
+  let gradeTierIndex = idx.grade_tier_index >= 0 ? Number(row[idx.grade_tier_index]) : NaN;
+  let gradeRank = idx.grade_rank >= 0 ? String(row[idx.grade_rank] || "") : "";
+  const gradeName = String(row[idx.grade_name] || "");
+
+  if (!Number.isFinite(gradeTierIndex)) {
+    const parsed = parseLegacyGradeName_(gradeName);
+    gradeTierIndex = parsed.tierIndex;
+    gradeRank = parsed.rank;
+  }
+
+  let beforeTierIndex = idx.grade_before_tier_index >= 0
+    ? Number(row[idx.grade_before_tier_index])
+    : gradeTierIndex;
+  let beforeRank = idx.grade_before_rank >= 0
+    ? String(row[idx.grade_before_rank] || "")
+    : gradeRank;
+  if (!Number.isFinite(beforeTierIndex)) {
+    beforeTierIndex = gradeTierIndex;
+    beforeRank = gradeRank;
+  }
+
+  const afterTierRaw = idx.grade_after_tier_index >= 0 ? row[idx.grade_after_tier_index] : "";
+  const afterTierIndex =
+    afterTierRaw === "" || afterTierRaw === null || afterTierRaw === undefined
+      ? ""
+      : Number(afterTierRaw);
+  const afterRank = idx.grade_after_rank >= 0 ? String(row[idx.grade_after_rank] || "") : "";
+
   return {
     roomId: String(row[idx.room_id] || ""),
     employeeName: String(row[idx.employee_name] || ""),
-    gradeIndex: Number(row[idx.grade_index] || 0),
-    gradeName: String(row[idx.grade_name] || ""),
+    gradeIndex: Number(row[idx.grade_index] || guidelineIndexForTier_(gradeTierIndex)),
+    gradeName: gradeName || formatGradeLabel_(gradeTierIndex, gradeRank),
+    gradeTierIndex: gradeTierIndex,
+    gradeRank: gradeRank,
+    gradeBeforeTierIndex: beforeTierIndex,
+    gradeBeforeRank: beforeRank,
+    gradeAfterTierIndex: Number.isFinite(afterTierIndex) ? afterTierIndex : "",
+    gradeAfterRank: afterRank,
+    gradeLabelBefore: formatGradeLabel_(beforeTierIndex, beforeRank),
+    gradeLabelAfter:
+      afterTierIndex === "" ? "" : formatGradeLabel_(afterTierIndex, afterRank),
     managerName: String(row[idx.manager_name] || ""),
     status: String(row[idx.status] || ""),
     createdAt: createdAt,
     updatedAt: updatedAt
   };
+}
+
+function parseLegacyGradeName_(gradeName) {
+  const name = String(gradeName || "").trim();
+  if (!name || name === "育成選手" || name === "育成") return { tierIndex: 0, rank: "" };
+  const m = name.match(/^(育成|ファーム|スタメン|キャプテン|選手権監督|名球会)(L|M|H)?$/);
+  if (m) {
+    const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "名球会"];
+    const tierIndex = tiers.indexOf(m[1]);
+    return { tierIndex: tierIndex >= 0 ? tierIndex : 0, rank: m[2] || "" };
+  }
+  const legacy = ["育成選手", "ファーム", "スタメン", "キャプテン", "選手権監督", "監督", "名球会"];
+  const li = legacy.indexOf(name);
+  if (li >= 0) {
+    const map = [0, 1, 2, 3, 4, 4, 5];
+    return { tierIndex: map[li] || 0, rank: "" };
+  }
+  return { tierIndex: 0, rank: "" };
 }
 
 function indexMapRooms_(header) {
@@ -616,7 +815,13 @@ function indexMapRooms_(header) {
     manager_name: map["manager_name"] ?? 4,
     status: map["status"] ?? 5,
     created_at: map["created_at"] ?? 6,
-    updated_at: map["updated_at"] ?? 7
+    updated_at: map["updated_at"] ?? 7,
+    grade_tier_index: map["grade_tier_index"] ?? -1,
+    grade_rank: map["grade_rank"] ?? -1,
+    grade_before_tier_index: map["grade_before_tier_index"] ?? -1,
+    grade_before_rank: map["grade_before_rank"] ?? -1,
+    grade_after_tier_index: map["grade_after_tier_index"] ?? -1,
+    grade_after_rank: map["grade_after_rank"] ?? -1
   };
 }
 
@@ -641,11 +846,11 @@ function indexMap_(header) {
 function getRoomsSummary_(limit) {
   const ss = getSs_();
   const roomsSheet = ss.getSheetByName(SHEET_ROOMS);
+  ensureRoomsColumns_(roomsSheet);
   const roomsValues = roomsSheet.getDataRange().getValues();
   if (roomsValues.length <= 1) return [];
   const roomsHeader = roomsValues[0];
   const ridx = indexMapRooms_(roomsHeader);
-
   const rooms = [];
   for (let i = 1; i < roomsValues.length; i++) {
     rooms.push(roomRowToObj_(roomsValues[i], ridx));
@@ -660,6 +865,8 @@ function getRoomsSummary_(limit) {
         roomId: r.roomId,
         employeeName: r.employeeName,
         gradeName: r.gradeName,
+        gradeLabelBefore: r.gradeLabelBefore || r.gradeName,
+        gradeLabelAfter: r.gradeLabelAfter || "",
         managerName: r.managerName,
         selfAvg: 0,
         managerAvg: 0,
@@ -703,6 +910,8 @@ function getRoomsSummary_(limit) {
       roomId: r.roomId,
       employeeName: r.employeeName,
       gradeName: r.gradeName,
+      gradeLabelBefore: r.gradeLabelBefore || r.gradeName,
+      gradeLabelAfter: r.gradeLabelAfter || "",
       managerName: r.managerName,
       selfAvg: selfAvg,
       managerAvg: mgrAvg,

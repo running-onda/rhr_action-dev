@@ -358,7 +358,34 @@
       width: 116px;
     }
 
-    #myGradeSelect {
+    .grade-chip-value {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .grade-chip-group .toolbar-group label {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0 0 4px;
+      overflow: visible;
+      clip: auto;
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+
+    #gradeTierSelect,
+    #gradeRankSelect {
       width: 124px;
     }
 
@@ -1085,7 +1112,7 @@
         border: 0;
       }
 
-      #userName, #myGradeSelect, #gradeFilter {
+      #userName, #gradeTierSelect, #gradeRankSelect, #gradeFilter {
         flex: 1 1 100px;
         width: auto;
         max-width: none;
@@ -1319,11 +1346,17 @@
           <label for="userName">氏名</label>
           <input id="userName" type="text" placeholder="名前を入力" autocomplete="name" />
         </div>
+        <div class="toolbar-group grade-chip-group">
+          <label>査定MTG前</label>
+          <span id="gradeBeforeLabel" class="grade-chip-value">—</span>
+        </div>
         <div class="toolbar-group">
-          <label for="myGradeSelect">自分の職級</label>
-          <select id="myGradeSelect">
-            <option value="">未設定</option>
-          </select>
+          <label for="gradeTierSelect" id="gradeTierLabel">査定MTG後・職級</label>
+          <select id="gradeTierSelect"></select>
+        </div>
+        <div class="toolbar-group">
+          <label for="gradeRankSelect">ランク（L / M / H）</label>
+          <select id="gradeRankSelect"></select>
         </div>
         <div class="toolbar-group">
           <label for="gradeFilter">表示する職級</label>
@@ -1352,7 +1385,17 @@
 
   <script type="module">
     import { getRoomContext, isRoomLink } from "./js/room.js";
-    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled } from "./js/assessment-store.js";
+    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled, updateRoomGrade } from "./js/assessment-store.js";
+    import {
+      GRADE_TIERS,
+      GRADE_RANKS,
+      GUIDELINE_GRADES,
+      formatGradeLabel,
+      guidelineIndexForTier,
+      tierIndexFromGuidelineIndex,
+      normalizeRoomGrade,
+      roomGradeLabels
+    } from "./grades.js";
 
     const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
     const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
@@ -1432,15 +1475,7 @@
       });
     }
 
-    const grades = [
-      { name: "育成選手", phase: "知る" },
-      { name: "ファーム", phase: "試す" },
-      { name: "スタメン", phase: "成果化する" },
-      { name: "キャプテン", phase: "他者を巻き込む" },
-      { name: "選手権監督", phase: "勝ち方を描く" },
-      { name: "監督", phase: "組織を文化にする" },
-      { name: "名球会", phase: "社会へ波及する" }
-    ];
+    const grades = GUIDELINE_GRADES;
 
     const categoryTheme = {
       "アウトプット力": { color: "#6b9b7a", soft: "#eef4ef" },
@@ -1465,7 +1500,10 @@
     const categoryGrid = document.getElementById("categoryGrid");
     const itemsEl = document.getElementById("items");
     const gradeFilter = document.getElementById("gradeFilter");
-    const myGradeSelect = document.getElementById("myGradeSelect");
+    const gradeTierSelect = document.getElementById("gradeTierSelect");
+    const gradeRankSelect = document.getElementById("gradeRankSelect");
+    const gradeBeforeLabel = document.getElementById("gradeBeforeLabel");
+    const gradeTierLabel = document.getElementById("gradeTierLabel");
     const userNameInput = document.getElementById("userName");
     const saveAllBtn = document.getElementById("saveAllBtn");
     const saveToast = document.getElementById("saveToast");
@@ -1573,25 +1611,10 @@
       optView.value = String(i);
       optView.textContent = label;
       gradeFilter.appendChild(optView);
-
-      const optMine = document.createElement("option");
-      optMine.value = String(i);
-      optMine.textContent = label;
-      myGradeSelect.appendChild(optMine);
     });
 
     const savedName = localStorage.getItem(USER_NAME_KEY);
     if (savedName) userNameInput.value = savedName;
-
-    const savedMyGrade = localStorage.getItem(MY_GRADE_KEY);
-    if (savedMyGrade !== null && savedMyGrade !== "") {
-      myGradeSelect.value = savedMyGrade;
-    }
-
-    function getMyGradeIndex() {
-      const v = myGradeSelect.value;
-      return v === "" ? -1 : Number(v);
-    }
 
     const categories = [...new Set(data.map(d => d.category))];
 
@@ -1606,6 +1629,108 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
+
+    function renderGradeTierOptions() {
+      gradeTierSelect.innerHTML = GRADE_TIERS.map(
+        (g, i) => `<option value="${i}">${escapeHtml(g.name)}（${escapeHtml(g.phase)}）</option>`
+      ).join("");
+    }
+
+    function syncGradeRankSelect() {
+      const tierIndex = Number(gradeTierSelect.value);
+      const tier = GRADE_TIERS[tierIndex];
+      if (!tier || !tier.hasRank) {
+        gradeRankSelect.disabled = true;
+        gradeRankSelect.innerHTML = `<option value="">—</option>`;
+        gradeRankSelect.value = "";
+        return;
+      }
+      gradeRankSelect.disabled = false;
+      gradeRankSelect.innerHTML = GRADE_RANKS.map(r => `<option value="${r}">${r}</option>`).join("");
+      if (!GRADE_RANKS.includes(gradeRankSelect.value)) gradeRankSelect.value = "L";
+    }
+
+    function updateGradeLabels() {
+      const g = normalizeRoomGrade(roomMeta);
+      if (gradeBeforeLabel) gradeBeforeLabel.textContent = formatGradeLabel(g.beforeTierIndex, g.beforeRank);
+    }
+
+    function applyGradeToForm(tierIndex, rank) {
+      gradeTierSelect.value = String(tierIndex);
+      syncGradeRankSelect();
+      if (rank && !gradeRankSelect.disabled) gradeRankSelect.value = rank;
+      updateGradeLabels();
+    }
+
+    function loadLocalGrade() {
+      if (roomMeta) {
+        const g = normalizeRoomGrade(roomMeta);
+        const afterTier = g.afterTierIndex !== null ? g.afterTierIndex : g.tierIndex;
+        const afterRank = g.afterTierIndex !== null ? g.afterRank : g.rank;
+        applyGradeToForm(afterTier, afterRank);
+        if (gradeTierLabel) gradeTierLabel.textContent = "査定MTG後・職級";
+        return;
+      }
+      const tier = localStorage.getItem(MY_GRADE_KEY + "-tier");
+      const rank = localStorage.getItem(MY_GRADE_KEY + "-rank");
+      if (tier !== null && tier !== "") {
+        applyGradeToForm(Number(tier), rank || "");
+      } else {
+        const legacy = localStorage.getItem(MY_GRADE_KEY);
+        if (legacy !== null && legacy !== "") {
+          applyGradeToForm(tierIndexFromGuidelineIndex(Number(legacy)), "");
+        } else {
+          renderGradeTierOptions();
+          syncGradeRankSelect();
+        }
+      }
+      if (gradeBeforeLabel) {
+        gradeBeforeLabel.textContent = formatGradeLabel(Number(gradeTierSelect.value), gradeRankSelect.value);
+      }
+      if (gradeTierLabel) gradeTierLabel.textContent = "自分の職級";
+    }
+
+    function saveLocalGrade() {
+      if (roomId) return;
+      localStorage.setItem(MY_GRADE_KEY + "-tier", gradeTierSelect.value);
+      localStorage.setItem(MY_GRADE_KEY + "-rank", gradeRankSelect.value || "");
+      if (gradeBeforeLabel) {
+        gradeBeforeLabel.textContent = formatGradeLabel(Number(gradeTierSelect.value), gradeRankSelect.value);
+      }
+    }
+
+    async function persistRoomGrade() {
+      if (!roomId || !apiEnabled) return;
+      const gradeTierIndex = Number(gradeTierSelect.value);
+      const gradeRank = gradeRankSelect.disabled ? "" : gradeRankSelect.value;
+      try {
+        const updated = await updateRoomGrade({
+          roomId,
+          gradeTierIndex,
+          gradeRank,
+          gradeAfterTierIndex: gradeTierIndex,
+          gradeAfterRank: gradeRank
+        });
+        roomMeta = { ...roomMeta, ...updated };
+        updateGradeLabels();
+        showToast("職級を保存しました");
+      } catch (e) {
+        alert("職級の保存に失敗しました: " + (e?.message || String(e)));
+      }
+    }
+
+    function getMyGradeIndex() {
+      const tierIndex = Number(gradeTierSelect.value);
+      if (!Number.isFinite(tierIndex)) return -1;
+      return guidelineIndexForTier(tierIndex);
+    }
+
+    function getMyGradeStorageValue() {
+      return gradeTierSelect.value;
+    }
+
+    renderGradeTierOptions();
+    loadLocalGrade();
 
     function renderCategories() {
       categoryGrid.innerHTML = "";
@@ -2070,7 +2195,7 @@
             await saveAssessmentBatch(roomId, buildSaveRows(key, d, data));
             await reloadAssessmentsFromApi();
 
-            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
             markBlockSaved(block, now);
             showToast("保存済");
           } finally {
@@ -2081,7 +2206,7 @@
 
         // フォールバック: localStorage
         if (name) localStorage.setItem(USER_NAME_KEY, name);
-        assessments[key] = { ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+        assessments[key] = { ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
         saveAssessmentsLocal();
         markBlockSaved(block, now);
         showToast("保存済");
@@ -2107,7 +2232,7 @@
               if (!d) continue;
               const data = assessments[key] || {};
               rows.push(...buildSaveRows(key, d, data));
-              assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+              assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
             }
 
             itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
@@ -2127,7 +2252,7 @@
         // フォールバック: localStorage
         for (const key of allKeys) {
           const data = assessments[key] || {};
-          assessments[key] = { ...data, userName: name, myGrade: myGradeSelect.value, updatedAt: now };
+          assessments[key] = { ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
         }
         itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
           markBlockSaved(block, now);
@@ -2162,8 +2287,15 @@
     }
 
     gradeFilter.addEventListener("change", renderAndBind);
-    myGradeSelect.addEventListener("change", () => {
-      if (!roomId) localStorage.setItem(MY_GRADE_KEY, myGradeSelect.value);
+    gradeTierSelect.addEventListener("change", () => {
+      syncGradeRankSelect();
+      if (roomId) persistRoomGrade();
+      else saveLocalGrade();
+      renderAndBind();
+    });
+    gradeRankSelect.addEventListener("change", () => {
+      if (roomId) persistRoomGrade();
+      else saveLocalGrade();
       renderAndBind();
     });
     userNameInput.addEventListener("change", () => {
@@ -2190,8 +2322,7 @@
           if (roomMeta) {
             userNameInput.value = roomMeta.employeeName || "";
             userNameInput.disabled = true;
-            myGradeSelect.value = String(Number(roomMeta.gradeIndex || 0));
-            myGradeSelect.disabled = true;
+            loadLocalGrade();
           }
         } catch (e) {
           alert("評価データの読み込みに失敗しました: " + (e?.message || String(e)));

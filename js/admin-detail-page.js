@@ -1,5 +1,6 @@
 import { apiCall } from "./api.js";
 import { buildViewerUrl } from "./room.js";
+import { roomGradeLabels } from "./grades.js";
 
 function $(id) {
   return document.getElementById(id);
@@ -95,7 +96,8 @@ async function init() {
     const res = await apiCall("getRoomSummary", { roomId });
     const room = res.room || {};
 
-    $("meta").textContent = `社員: ${room.employeeName || "—"} / 職級: ${room.gradeName || "—"} / roomId: ${room.roomId || roomId}`;
+    const labels = roomGradeLabels(room);
+    $("meta").textContent = `社員: ${room.employeeName || "—"} / 評価前職級: ${labels.before} / 評価後職級: ${labels.after || "—"} / roomId: ${room.roomId || roomId}`;
 
     renderTableBody(
       $("byCategoryBody"),

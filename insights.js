@@ -300,7 +300,42 @@ ${ctx.minutes || "（なし）"}`;
     });
   }
 
-  function renderPromoScale(gradeIndex, finalScore, hasManagerScore) {
+  function resolveGradeContext(roomMeta) {
+    const H = window.RHR_GRADES;
+    if (!H) {
+      return { before: "未設定", after: "—", promoTierIndex: 0, gradeName: "未設定" };
+    }
+
+    if (roomMeta) {
+      const labels = H.roomGradeLabels(roomMeta);
+      const g = H.normalizeRoomGrade(roomMeta);
+      return {
+        before: labels.before,
+        after: labels.after || "—",
+        promoTierIndex: g.beforeTierIndex,
+        gradeName: labels.after || labels.before
+      };
+    }
+
+    const tier = localStorage.getItem(MY_GRADE_KEY + "-tier");
+    const rank = localStorage.getItem(MY_GRADE_KEY + "-rank");
+    if (tier !== null && tier !== "") {
+      const tierIndex = Number(tier);
+      const label = H.formatGradeLabel(tierIndex, rank || "");
+      return { before: label, after: label, promoTierIndex: tierIndex, gradeName: label };
+    }
+
+    const legacy = localStorage.getItem(MY_GRADE_KEY) || localStorage.getItem("rhr-guideline-my-grade");
+    if (legacy !== null && legacy !== "") {
+      const tierIndex = H.tierIndexFromGuidelineIndex(Number(legacy));
+      const label = H.formatGradeLabel(tierIndex, "");
+      return { before: label, after: label, promoTierIndex: tierIndex, gradeName: label };
+    }
+
+    return { before: "未設定", after: "—", promoTierIndex: 0, gradeName: "未設定" };
+  }
+
+  function renderPromoScale(tierIndex, finalScore, hasManagerScore) {
     const wrap = document.getElementById("promoScale");
     if (!wrap) return;
 
@@ -310,7 +345,7 @@ ${ctx.minutes || "（なし）"}`;
       return;
     }
 
-    const isIkusei = gradeIndex === 0;
+    const isIkusei = Number(tierIndex) === 0;
     const tier = isIkusei ? getIkuseiTier(finalScore) : getUpperTier(finalScore);
     const segments = isIkusei ? 2 : 5;
     const left = markerLeftPercent(tier.segment, segments);
@@ -484,20 +519,15 @@ ${ctx.minutes || "（なし）"}`;
         localStorage.getItem(USER_NAME_KEY) ||
         localStorage.getItem("rhr-guideline-user-name") ||
         "";
-      const rawGrade =
-        roomMeta?.gradeIndex ??
-        localStorage.getItem(MY_GRADE_KEY) ??
-        localStorage.getItem("rhr-guideline-my-grade");
-      const gradeIndex =
-        rawGrade === null || rawGrade === "" || rawGrade === undefined ? -1 : Number(rawGrade);
-      const gradeName =
-        roomMeta?.gradeName ||
-        (gradeIndex >= 0 && grades[gradeIndex] ? grades[gradeIndex].name : "未設定");
+      const gradeCtx = resolveGradeContext(roomMeta);
+      const gradeName = gradeCtx.gradeName;
 
       const summaryUser = document.getElementById("summaryUser");
-      const summaryGrade = document.getElementById("summaryGrade");
+      const summaryGradeBefore = document.getElementById("summaryGradeBefore");
+      const summaryGradeAfter = document.getElementById("summaryGradeAfter");
       if (summaryUser) summaryUser.textContent = userName || "（氏名未設定）";
-      if (summaryGrade) summaryGrade.textContent = gradeName;
+      if (summaryGradeBefore) summaryGradeBefore.textContent = gradeCtx.before;
+      if (summaryGradeAfter) summaryGradeAfter.textContent = gradeCtx.after;
 
       const stats = collectRatings(assessments);
       const alertEl = document.getElementById("completionAlert");
@@ -549,12 +579,12 @@ ${ctx.minutes || "（なし）"}`;
       const hasManagerScore = stats.mgrRated.length > 0;
       const tier =
         hasManagerScore
-          ? gradeIndex === 0
+          ? gradeCtx.promoTierIndex === 0
             ? getIkuseiTier(stats.mgrAvg10)
             : getUpperTier(stats.mgrAvg10)
           : { label: "未判定" };
 
-      renderPromoScale(gradeIndex, stats.mgrAvg10, hasManagerScore);
+      renderPromoScale(gradeCtx.promoTierIndex, stats.mgrAvg10, hasManagerScore);
       renderItemTable(stats.rows);
 
       lastStats = stats;

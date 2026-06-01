@@ -30,6 +30,10 @@ export async function deleteRoom(roomId) {
   return await apiCall("deleteRoom", { roomId });
 }
 
+export async function updateRoomGrade(input) {
+  return await apiCall("updateRoomGrade", input);
+}
+
 export async function getRooms(limit = 200) {
   return await apiCall("getRooms", { limit });
 }
