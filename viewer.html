@@ -53,6 +53,7 @@
       --space-md: 20px;
       --space-lg: 32px;
       --space-xl: 48px;
+      --page-max: 1200px;
     }
 
     * { box-sizing: border-box; }
@@ -73,9 +74,9 @@
     }
 
     .header-inner {
-      max-width: 1280px;
+      max-width: var(--page-max);
       margin: 0 auto;
-      padding: 10px 20px;
+      padding: 10px var(--space-lg);
       display: flex;
       flex-wrap: nowrap;
       align-items: center;
@@ -84,9 +85,9 @@
     }
 
     .header-sub {
-      max-width: 1280px;
+      max-width: var(--page-max);
       margin: 0 auto;
-      padding: 10px 20px;
+      padding: 10px var(--space-lg);
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -178,8 +179,9 @@
 
     .header-actions {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
       gap: 6px;
       min-height: 34px;
       min-width: 0;
@@ -260,6 +262,19 @@
       border-color: var(--ink);
       color: var(--ink);
       background: rgba(26, 39, 68, 0.04);
+    }
+
+    .btn-header-outline {
+      background: var(--surface);
+      color: var(--ink-secondary);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .btn-header-outline:hover {
+      border-color: var(--ink-muted);
+      color: var(--ink);
+      background: var(--navy-soft);
     }
 
     .header-actions .save-toast {
@@ -379,7 +394,7 @@
     }
 
     main {
-      max-width: 1200px;
+      max-width: var(--page-max);
       margin: 0 auto;
       padding: var(--space-lg) var(--space-lg) var(--space-xl);
     }
@@ -825,23 +840,34 @@
     }
 
     .btn-remove-supervisor {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      color: var(--ink-muted);
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      padding: 0;
-      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      margin-left: auto;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-remove-supervisor svg {
+      display: block;
     }
 
     .btn-remove-supervisor:hover {
-      border-color: var(--ink);
-      color: var(--ink);
+      background: rgba(180, 35, 24, 0.08);
+      color: #b42318;
+    }
+
+    .btn-remove-supervisor:focus-visible {
+      outline: 2px solid rgba(26, 39, 68, 0.35);
+      outline-offset: 2px;
     }
 
     .btn-add-supervisor {
@@ -864,6 +890,104 @@
       color: var(--ink);
       background: var(--navy-soft);
     }
+
+    .score-compare-panel {
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .score-compare-title {
+      margin: 0 0 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink-secondary);
+      text-transform: uppercase;
+    }
+
+    .score-compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .score-chip {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+    }
+
+    .score-chip-self {
+      border-color: rgba(107, 155, 122, 0.35);
+      background: rgba(107, 155, 122, 0.06);
+    }
+
+    .score-chip-supervisor {
+      border-color: rgba(26, 39, 68, 0.12);
+    }
+
+    .score-chip-final {
+      border-color: rgba(201, 162, 39, 0.45);
+      background: rgba(201, 162, 39, 0.08);
+    }
+
+    .score-chip-role {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+
+    .score-chip-role small {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--ink-muted);
+    }
+
+    .score-chip-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+
+    .score-chip-bar {
+      margin-top: 8px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(26, 39, 68, 0.08);
+      overflow: hidden;
+    }
+
+    .score-chip-bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--chip-color, var(--ink));
+      transition: width 0.2s ease;
+    }
+
+    .score-chip.has-gap {
+      box-shadow: inset 0 0 0 1px rgba(212, 132, 106, 0.45);
+    }
+
+    .score-compare-hint {
+      margin: 10px 0 0;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+    }
+
+    .supervisor-block.is-supervisor-1 { --chip-color: #4a8f9c; }
+    .supervisor-block.is-supervisor-2 { --chip-color: #7a8f6b; }
+    .eval-self { --chip-color: #6b9b7a; }
 
     .assess-actions {
       display: flex;
@@ -931,6 +1055,8 @@
       .header-sub {
         flex-direction: column;
         align-items: stretch;
+        padding-left: var(--space-lg);
+        padding-right: var(--space-lg);
       }
 
       .header-fields,
@@ -967,7 +1093,8 @@
     }
 
     @media (max-width: 720px) {
-      .header-inner { padding: 10px 14px; }
+      .header-inner,
+      .header-sub { padding: 10px var(--space-md); }
       main { padding: var(--space-md); }
       .self-assess { padding: 18px 16px; }
     }
@@ -1206,6 +1333,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="すべての小項目に上司評価欄を追加し、氏名も一括入力します">すべてに上司を追加（氏名も）</button>
         <a href="insights.html" class="btn-header btn-header-secondary" id="insightsLink">評価サマリー</a>
         <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
@@ -1673,14 +1801,73 @@
       assessments = res.assessments || {};
     }
 
+    function formatScoreDisplay(v) {
+      const n = Number(v || 0);
+      if (!n) return "—";
+      return Number.isInteger(n) ? String(n) : n.toFixed(1);
+    }
+
+    function avgSupervisorRatings(supervisors) {
+      const rated = (supervisors || []).map(s => Number(s.rating || 0)).filter(r => r > 0);
+      if (!rated.length) return 0;
+      return rated.reduce((a, b) => a + b, 0) / rated.length;
+    }
+
+    const REMOVE_SUPERVISOR_ICON = `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4.5 4.5l7 7m0-7l-7 7"/></svg>`;
+
+    function renderScoreComparePanel(selfRating, supervisors) {
+      const selfVal = Number(selfRating || 0);
+      const sups = supervisors || [];
+      const finalAvg = avgSupervisorRatings(sups);
+      const selfName = userNameInput.value.trim() || "本人";
+
+      const supChips = sups.map((sup, i) => {
+        const val = Number(sup.rating || 0);
+        const name = sup.name?.trim() || `上司${i + 1}`;
+        const gap = selfVal > 0 && val > 0 && Math.abs(selfVal - val) >= 0.5;
+        return `
+          <div class="score-chip score-chip-supervisor${gap ? " has-gap" : ""}" data-compare-sup="${i}">
+            <span class="score-chip-role">上司${i + 1}<br><small>${escapeHtml(name)}</small></span>
+            <span class="score-chip-value">${formatScoreDisplay(val)}</span>
+            <div class="score-chip-bar"><div class="score-chip-bar-fill" style="width:${val ? (val / 5 * 100) : 0}%;background:${i === 0 ? "#4a8f9c" : "#7a8f6b"}"></div></div>
+          </div>`;
+      }).join("");
+
+      return `
+        <div class="score-compare-panel" data-score-compare>
+          <p class="score-compare-title">評価の比較（話し合い用）</p>
+          <div class="score-compare-grid">
+            <div class="score-chip score-chip-self">
+              <span class="score-chip-role">部下（本人）<br><small>${escapeHtml(selfName)}</small></span>
+              <span class="score-chip-value" data-compare-self>${formatScoreDisplay(selfVal)}</span>
+              <div class="score-chip-bar"><div class="score-chip-bar-fill" style="width:${selfVal ? (selfVal / 5 * 100) : 0}%;background:#6b9b7a"></div></div>
+            </div>
+            ${supChips}
+            <div class="score-chip score-chip-final">
+              <span class="score-chip-role">最終査定裁量者<br><small>上司評価の平均</small></span>
+              <span class="score-chip-value" data-compare-final>${formatScoreDisplay(finalAvg)}</span>
+              <div class="score-chip-bar"><div class="score-chip-bar-fill" style="width:${finalAvg ? (finalAvg / 5 * 100) : 0}%;background:var(--gold)"></div></div>
+            </div>
+          </div>
+          <p class="score-compare-hint">本人と各上司の評価差を確認し、最終査定裁量者（上司評価平均）を基準に調整してください。</p>
+        </div>`;
+    }
+
+    function updateScoreComparePanel(block) {
+      const panel = block.querySelector("[data-score-compare]");
+      if (!panel) return;
+      const data = readAssessFromBlock(block);
+      panel.outerHTML = renderScoreComparePanel(data.selfRating, data.supervisors);
+    }
+
     function renderSupervisorBlock(sup, index) {
       const canRemove = index > 0;
       return `
-        <div class="supervisor-block" data-supervisor-index="${index}">
+        <div class="supervisor-block is-supervisor-${index + 1}" data-supervisor-index="${index}">
           <div class="supervisor-block-head">
-            <span class="eval-label">上司評価・コメント</span>
-            <input type="text" class="supervisor-name" placeholder="上司の名前" value="${escapeHtml(sup.name)}" />
-            ${canRemove ? `<button type="button" class="btn-remove-supervisor" aria-label="この上司を削除">×</button>` : ""}
+            <span class="eval-label">上司評価（${index + 1}人目）</span>
+            <input type="text" class="supervisor-name" placeholder="上司の名前" value="${escapeHtml(sup.name)}" aria-label="上司${index + 1}の氏名" />
+            ${canRemove ? `<button type="button" class="btn-remove-supervisor" aria-label="上司${index + 1}を削除">${REMOVE_SUPERVISOR_ICON}</button>` : ""}
           </div>
           <div class="rating-dots-wrap">
             <div class="rating-dots">${renderRatingDots(sup.rating || 0)}</div>
@@ -1697,6 +1884,7 @@
 
       return `
         <div class="self-assess" data-assess-key="${escapeHtml(key)}">
+          ${renderScoreComparePanel(selfRating, supervisors)}
           <div class="eval-block eval-self">
             <label class="eval-label">本人評価・コメント</label>
             <div class="rating-dots-wrap">
@@ -1754,6 +1942,44 @@
     function syncBlockToAssessments(key, block) {
       const data = readAssessFromBlock(block);
       assessments[key] = { ...(assessments[key] || {}), ...data };
+      updateScoreComparePanel(block);
+    }
+
+    function addSupervisorToAllWithNames() {
+      flushVisibleBlocksToAssessments();
+      const defaultMgr1 = roomMeta?.managerName || "";
+      const mgr1 = prompt("1人目の上司の氏名（全項目に反映）", defaultMgr1);
+      if (mgr1 === null) return;
+      const mgr2 = prompt("2人目の上司の氏名（全項目に2人目を追加。空欄なら追加しません）", "");
+      if (mgr2 === null) return;
+
+      const allKeys = Object.keys(dataIndexByKey);
+      for (const key of allKeys) {
+        const data = assessments[key] || {};
+        let sups = Array.isArray(data.supervisors)
+          ? data.supervisors.map(s => ({ name: s.name || "", rating: Number(s.rating || 0), comment: s.comment || "" }))
+          : [];
+
+        if (!sups.length) {
+          sups.push({ name: mgr1.trim(), rating: 0, comment: "" });
+        } else if (mgr1.trim()) {
+          sups[0].name = mgr1.trim();
+        }
+
+        if (mgr2.trim()) {
+          if (sups.length < 2) {
+            sups.push({ name: mgr2.trim(), rating: 0, comment: "" });
+          } else {
+            sups[1].name = mgr2.trim();
+          }
+        }
+
+        assessments[key] = { ...data, supervisors: sups };
+      }
+
+      if (!roomId) saveAssessmentsLocal();
+      renderAndBind();
+      showToast("全項目に上司を追加しました");
     }
 
     function flushVisibleBlocksToAssessments() {
@@ -1765,6 +1991,7 @@
     function bindAssessmentEvents() {
       itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => {
         const key = block.dataset.assessKey;
+        updateScoreComparePanel(block);
 
         block.querySelector(".assess-save")?.addEventListener("click", () => {
           saveItemAssessment(key, block);
@@ -1939,6 +2166,10 @@
     saveAllBtn.addEventListener("click", () => {
       if (!roomId) localStorage.setItem(USER_NAME_KEY, userNameInput.value.trim());
       saveAllAssessments();
+    });
+    document.getElementById("addSupervisorAllBtn")?.addEventListener("click", addSupervisorToAllWithNames);
+    userNameInput.addEventListener("input", () => {
+      itemsEl.querySelectorAll(".self-assess[data-assess-key]").forEach(block => updateScoreComparePanel(block));
     });
 
     const dataIndexByKey = Object.fromEntries((window.GUIDELINE_DATA || []).map(d => [`${d.category}::${d.item}`, d]));
