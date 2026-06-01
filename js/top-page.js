@@ -1,4 +1,4 @@
-import { createRoom, getRooms, isApiEnabled } from "./assessment-store.js";
+import { createRoom, getRoomSummaries, isApiEnabled } from "./assessment-store.js";
 import { formatApiError } from "./api.js";
 import { buildViewerUrl } from "./room.js";
 import {
@@ -83,7 +83,7 @@ async function refreshRooms() {
   tbody.innerHTML = `<tr><td colspan="6">読み込み中…</td></tr>`;
   showLoading("ルーム一覧を読み込んでいます…");
   try {
-    const rooms = await getRooms(200);
+    const rooms = await getRoomSummaries(200);
     if (!rooms.length) {
       tbody.innerHTML = `<tr><td colspan="6">まだルームがありません。</td></tr>`;
       return;
@@ -98,7 +98,7 @@ async function refreshRooms() {
           <td>${escapeHtml(labels.before)}</td>
           <td>${escapeHtml(labels.after || "—")}</td>
           <td class="mono">${escapeHtml(r.roomId || "")}</td>
-          <td>${escapeHtml(formatDt(r.updatedAt))}</td>
+          <td>${escapeHtml(formatDt(r.lastUpdatedAt || r.updatedAt))}</td>
           <td><a href="${escapeHtml(roomUrl)}">評価シート</a></td>
         </tr>`;
       })

@@ -38,3 +38,8 @@ export async function getRooms(limit = 200) {
   return await apiCall("getRooms", { limit });
 }
 
+/** ルーム一覧＋評価平均（管理画面・TOP の一覧用） */
+export async function getRoomSummaries(limit = 200) {
+  return await apiCall("getRoomSummary", { limit });
+}
+
