@@ -14,6 +14,10 @@
 2. **拡張機能 → Apps Script** を開く（コンテナバインド推奨）
 3. `gas/Code.gs` の内容を貼り付け
 4. `gas/appsscript.json` の内容を **プロジェクトのマニフェスト**に反映（任意）
+5. **プロジェクト名**を `RHR_行動指針_評定API` に変更する
+   - エディタ左上の「無題のプロジェクト」をクリックしてリネーム
+   - または関数 `renameProjectOnce` を選択して **実行**（`Code.gs` 最新版のみ）
+   - 次回以降の API 呼び出し時にも `ensureProjectName_()` で自動設定されます
 
 ## 2. Script Properties 設定（必須）
 

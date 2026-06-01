@@ -16,6 +16,7 @@ const SHEET_ROOMS = "rooms";
 const SHEET_ASSESSMENTS = "assessments";
 const SHEET_MEMBERS = "members";
 const SHEET_SETTINGS = "settings";
+const PROJECT_TITLE = "RHR_行動指針_評定API";
 
 function doGet(e) {
   // JSONP transport for cross-origin reads (optional)
@@ -385,7 +386,26 @@ function getSs_() {
   return SpreadsheetApp.openById(id);
 }
 
+/** Apps Script エディタ左上のプロジェクト名を設定（Drive 上のファイル名） */
+function ensureProjectName_() {
+  try {
+    const file = DriveApp.getFileById(ScriptApp.getScriptId());
+    if (file.getName() !== PROJECT_TITLE) {
+      file.setName(PROJECT_TITLE);
+    }
+  } catch (err) {
+    // Drive 権限がない環境ではスキップ（API 本体には影響しない）
+    console.warn("ensureProjectName_ skipped:", err);
+  }
+}
+
+/** エディタから手動実行してプロジェクト名だけ変更する場合 */
+function renameProjectOnce() {
+  ensureProjectName_();
+}
+
 function ensureSheets_() {
+  ensureProjectName_();
   const ss = getSs_();
   if (!ss.getSheetByName(SHEET_ROOMS)) {
     const sh = ss.insertSheet(SHEET_ROOMS);
