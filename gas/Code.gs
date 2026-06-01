@@ -84,6 +84,8 @@ function doPost(e) {
         return jsonOk_(saveAssessment_(body));
       case "saveAssessmentBatch":
         return jsonOk_(saveAssessmentBatch_(body));
+      case "deleteRoom":
+        return jsonOk_(deleteRoom_(body));
       case "getAssessment":
         return jsonOk_(getAssessment_(body));
       case "getRooms":
@@ -251,6 +253,54 @@ function saveAssessmentBatch_(body) {
 
   touchRoomUpdatedAt_(roomId, now);
   return { roomId, updatedCount: updated.length, updatedAt: now.toISOString() };
+}
+
+function deleteRoom_(body) {
+  const roomId = String(body.roomId || "").trim();
+  if (!roomId) throw new Error("VALIDATION_ERROR: roomId");
+
+  const ss = getSs_();
+  const rooms = ss.getSheetByName(SHEET_ROOMS);
+  const room = getRoomById_(rooms, roomId);
+  if (!room) throw new Error("NOT_FOUND");
+
+  const assessments = ss.getSheetByName(SHEET_ASSESSMENTS);
+  const aValues = assessments.getDataRange().getValues();
+  let deletedAssessments = 0;
+  if (aValues.length > 1) {
+    const aidx = indexMap_(aValues[0]);
+    deletedAssessments = deleteRowsWhere_(assessments, aidx.room_id, roomId);
+  }
+
+  deleteRoomRow_(rooms, roomId);
+
+  return {
+    roomId: roomId,
+    employeeName: room.employeeName,
+    deletedAssessments: deletedAssessments
+  };
+}
+
+function deleteRoomRow_(roomsSheet, roomId) {
+  const values = roomsSheet.getDataRange().getValues();
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][0] || "") === roomId) {
+      roomsSheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
+function deleteRowsWhere_(sheet, colIndex, matchValue) {
+  const values = sheet.getDataRange().getValues();
+  let count = 0;
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][colIndex] || "") === matchValue) {
+      sheet.deleteRow(i + 1);
+      count++;
+    }
+  }
+  return count;
 }
 
 function getAssessment_(body) {

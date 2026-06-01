@@ -26,6 +26,10 @@ export async function createRoom(input) {
   return await apiCall("createRoom", input);
 }
 
+export async function deleteRoom(roomId) {
+  return await apiCall("deleteRoom", { roomId });
+}
+
 export async function getRooms(limit = 200) {
   return await apiCall("getRooms", { limit });
 }

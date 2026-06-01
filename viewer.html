@@ -1333,7 +1333,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="すべての小項目に上司評価欄を追加し、氏名も一括入力します">すべてに上司を追加（氏名も）</button>
+        <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="すべての小項目に上司評価欄を追加し、氏名も一括入力します">上司を追加</button>
         <a href="insights.html" class="btn-header btn-header-secondary" id="insightsLink">評価サマリー</a>
         <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
@@ -1807,6 +1807,12 @@
       return Number.isInteger(n) ? String(n) : n.toFixed(1);
     }
 
+    function formatFinalAvgDisplay(v) {
+      const n = Number(v || 0);
+      if (!n) return "—";
+      return n.toFixed(2);
+    }
+
     function avgSupervisorRatings(supervisors) {
       const rated = (supervisors || []).map(s => Number(s.rating || 0)).filter(r => r > 0);
       if (!rated.length) return 0;
@@ -1845,7 +1851,7 @@
             ${supChips}
             <div class="score-chip score-chip-final">
               <span class="score-chip-role">最終査定裁量者<br><small>上司評価の平均</small></span>
-              <span class="score-chip-value" data-compare-final>${formatScoreDisplay(finalAvg)}</span>
+              <span class="score-chip-value" data-compare-final>${formatFinalAvgDisplay(finalAvg)}</span>
               <div class="score-chip-bar"><div class="score-chip-bar-fill" style="width:${finalAvg ? (finalAvg / 5 * 100) : 0}%;background:var(--gold)"></div></div>
             </div>
           </div>

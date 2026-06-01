@@ -1,4 +1,5 @@
 import { apiCall } from "./api.js";
+import { deleteRoom } from "./assessment-store.js";
 
 function $(id) {
   return document.getElementById(id);
@@ -29,6 +30,7 @@ function fmtDt(iso) {
 }
 
 let allRows = [];
+let deletingRoomId = "";
 
 function render(rows) {
   const tbody = $("tbody");
@@ -41,16 +43,20 @@ function render(rows) {
 
   tbody.innerHTML = rows
     .map(r => {
-      const roomId = escapeHtml(r.roomId || "");
-      const detailUrl = `admin-detail.html?room=${encodeURIComponent(r.roomId || "")}`;
+      const roomId = r.roomId || "";
+      const detailUrl = `admin-detail.html?room=${encodeURIComponent(roomId)}`;
+      const isDeleting = deletingRoomId === roomId;
       return `<tr>
         <td>${escapeHtml(r.employeeName || "")}</td>
         <td>${escapeHtml(r.gradeName || "")}</td>
-        <td class="mono">${roomId}</td>
+        <td class="mono">${escapeHtml(roomId)}</td>
         <td class="num">${escapeHtml(fmtAvg(r.selfAvg))}</td>
         <td class="num">${escapeHtml(fmtAvg(r.managerAvg))}</td>
         <td>${escapeHtml(fmtDt(r.lastUpdatedAt))}</td>
-        <td><a class="link" href="${escapeHtml(detailUrl)}">詳細</a></td>
+        <td class="actions-cell">
+          <a class="link" href="${escapeHtml(detailUrl)}">詳細</a>
+          <button type="button" class="btn-delete" data-delete-room="${escapeHtml(roomId)}" ${isDeleting ? "disabled" : ""}>${isDeleting ? "削除中…" : "削除"}</button>
+        </td>
       </tr>`;
     })
     .join("");
@@ -67,6 +73,31 @@ function applyFilter() {
     return hay.includes(q);
   });
   render(filtered);
+}
+
+async function removeRoom(roomId) {
+  const row = allRows.find(r => r.roomId === roomId);
+  const label = row?.employeeName || roomId;
+  const ok = confirm(
+    `「${label}」（roomId: ${roomId}）のルームを削除しますか？\n\n評価データもすべて削除され、取り消せません。`
+  );
+  if (!ok) return;
+
+  deletingRoomId = roomId;
+  applyFilter();
+  $("err").hidden = true;
+
+  try {
+    await deleteRoom(roomId);
+    allRows = allRows.filter(r => r.roomId !== roomId);
+    deletingRoomId = "";
+    applyFilter();
+  } catch (e) {
+    deletingRoomId = "";
+    applyFilter();
+    $("err").hidden = false;
+    $("err").textContent = `削除に失敗しました: ${e.message || String(e)}`;
+  }
 }
 
 async function refresh() {
@@ -86,8 +117,12 @@ async function refresh() {
 function init() {
   $("q").addEventListener("input", applyFilter);
   $("refreshBtn").addEventListener("click", refresh);
+  $("tbody").addEventListener("click", e => {
+    const btn = e.target.closest("[data-delete-room]");
+    if (!btn || btn.disabled) return;
+    removeRoom(btn.dataset.deleteRoom || "");
+  });
   refresh();
 }
 
 init();
-

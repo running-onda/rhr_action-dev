@@ -262,7 +262,7 @@ export async function apiCall(action, payload = {}) {
   if (!apiUrl) throw new Error("API_URL_NOT_SET");
   if (!apiToken) throw new Error("API_TOKEN_NOT_SET");
 
-  const writeActions = new Set(["saveAssessment", "saveAssessmentBatch"]);
+  const writeActions = new Set(["saveAssessment", "saveAssessmentBatch", "deleteRoom"]);
   if (writeActions.has(action)) {
     return await writeApiCall(action, payload);
   }
