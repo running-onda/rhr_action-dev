@@ -12,6 +12,11 @@ export function getRoomContext() {
   return { roomId, role };
 }
 
+export function isRoomLink(search = window.location.search) {
+  const q = parseQuery(search);
+  return Boolean(String(q.room || "").trim());
+}
+
 export function getBaseUrl() {
   // GitHub Pages safe base url for generating links
   // e.g. https://host/repo/ + file.html

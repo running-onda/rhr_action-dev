@@ -22,12 +22,12 @@
     }
   </style>
   <script type="module">
-    import { getRoomContext } from "./js/room.js";
-    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled } from "./js/assessment-store.js";
+    import { isRoomLink } from "./js/room.js";
     (function () {
       var K = window.APP_ENV.authSessionKey;
-      if (sessionStorage.getItem(K) !== "1") return;
-      document.documentElement.classList.add("auth-session-ok");
+      if (isRoomLink() || sessionStorage.getItem(K) === "1") {
+        document.documentElement.classList.add("auth-session-ok");
+      }
     })();
   </script>
   <style>
@@ -1097,8 +1097,10 @@
   <script>
     (function () {
       var K = window.APP_ENV.authSessionKey;
-      if (sessionStorage.getItem(K) !== "1") return;
-      document.body.classList.remove("is-locked");
+      var room = new URLSearchParams(location.search).get("room");
+      if (room || sessionStorage.getItem(K) === "1") {
+        document.body.classList.remove("is-locked");
+      }
     })();
   </script>
   <div id="authGate" class="auth-gate" role="dialog" aria-labelledby="authTitle" aria-modal="true">
@@ -1170,7 +1172,10 @@
   </main>
   </div>
 
-  <script>
+  <script type="module">
+    import { getRoomContext, isRoomLink } from "./js/room.js";
+    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled } from "./js/assessment-store.js";
+
     const AUTH_SESSION_KEY = window.APP_ENV.authSessionKey;
     const ACCESS_PASSWORD_HASH = window.APP_ENV.accessPasswordHash;
 
@@ -1179,8 +1184,8 @@
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
-    function unlockApp() {
-      sessionStorage.setItem(AUTH_SESSION_KEY, "1");
+    function unlockApp({ persistSession = true } = {}) {
+      if (persistSession) sessionStorage.setItem(AUTH_SESSION_KEY, "1");
       document.documentElement.classList.add("auth-session-ok");
       document.body.classList.remove("is-locked");
       const gate = document.getElementById("authGate");
@@ -1213,6 +1218,14 @@
       const form = document.getElementById("authForm");
       const input = document.getElementById("authPassword");
       const errEl = document.getElementById("authError");
+
+      if (isRoomLink()) {
+        unlockApp({ persistSession: false });
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) logoutBtn.hidden = true;
+        onUnlock();
+        return;
+      }
 
       if (sessionStorage.getItem(AUTH_SESSION_KEY) === "1") {
         unlockApp();
