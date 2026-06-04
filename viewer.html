@@ -1025,26 +1025,6 @@
       border-top: 1px solid var(--line);
     }
 
-    .btn-save-item {
-      border: none;
-      background: var(--ink);
-      color: #fff;
-      border-radius: 6px;
-      padding: 10px 22px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity 0.15s, transform 0.15s;
-    }
-
-    .btn-save-item:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-    }
-
     @media (max-width: 900px) {
       .step {
         grid-template-columns: 1fr;
@@ -1368,7 +1348,7 @@
       <div class="header-actions">
         <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="すべての小項目に上司評価欄を追加し、氏名も一括入力します">上司を追加</button>
         <a href="insights.html" class="btn-header btn-header-secondary" id="insightsLink">評価サマリー</a>
-        <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべて保存</button>
+        <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべてを保存する</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
       </div>
     </div>
@@ -1385,7 +1365,7 @@
 
   <script type="module">
     import { getRoomContext, isRoomLink } from "./js/room.js";
-    import { getAssessment, saveAssessment, saveAssessmentBatch, isApiEnabled, updateRoomGrade } from "./js/assessment-store.js";
+    import { getAssessment, saveAssessmentBatch, isApiEnabled, updateRoomGrade } from "./js/assessment-store.js";
     import {
       GRADE_TIERS,
       GRADE_RANKS,
@@ -2029,7 +2009,6 @@
           <button type="button" class="btn-add-supervisor">＋ 上司を追加</button>
           <div class="assess-actions">
             ${renderSaveStatus(saved)}
-            <button type="button" class="btn-save-item assess-save">保存する</button>
           </div>
         </div>
       `;
@@ -2124,10 +2103,6 @@
         const key = block.dataset.assessKey;
         updateScoreComparePanel(block);
 
-        block.querySelector(".assess-save")?.addEventListener("click", () => {
-          saveItemAssessment(key, block);
-        });
-
         block.querySelectorAll(".rating-dots").forEach(dotsEl => {
           dotsEl.querySelectorAll(".rating-dot").forEach(btn => {
             btn.addEventListener("click", () => {
@@ -2177,42 +2152,6 @@
           });
         });
       });
-    }
-
-    function saveItemAssessment(key, block) {
-      const doSave = async () => {
-        const name = userNameInput.value.trim();
-        const data = readAssessFromBlock(block);
-        const now = new Date().toISOString();
-
-        // GAS保存（roomあり & API設定あり）
-        if (roomId && apiEnabled) {
-          showLoading("保存しています…");
-          try {
-            const d = dataIndexByKey[key];
-            if (!d) throw new Error("ITEM_NOT_FOUND");
-
-            await saveAssessmentBatch(roomId, buildSaveRows(key, d, data));
-            await reloadAssessmentsFromApi();
-
-            assessments[key] = { ...(assessments[key] || {}), ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
-            markBlockSaved(block, now);
-            showToast("保存済");
-          } finally {
-            hideLoading();
-          }
-          return;
-        }
-
-        // フォールバック: localStorage
-        if (name) localStorage.setItem(USER_NAME_KEY, name);
-        assessments[key] = { ...data, userName: name, myGrade: getMyGradeStorageValue(), updatedAt: now };
-        saveAssessmentsLocal();
-        markBlockSaved(block, now);
-        showToast("保存済");
-      };
-
-      doSave().catch(err => alert("保存に失敗しました: " + (err?.message || String(err))));
     }
 
     function saveAllAssessments() {
