@@ -603,16 +603,16 @@
 
     .item-header-row {
       display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 10px 20px;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0 24px;
     }
 
     .item-title-row {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 10px 14px;
+      gap: 0;
       margin: 0;
       flex: 0 0 auto;
     }
@@ -624,16 +624,17 @@
       color: var(--ink);
       letter-spacing: -0.02em;
       margin: 0;
+      white-space: nowrap;
     }
 
     .description-text {
-      flex: 1 1 240px;
-      font-size: 12px;
-      line-height: 1.65;
+      flex: 1 1 0;
+      font-size: 14px;
+      line-height: 1.7;
       color: var(--ink-muted);
       font-weight: 400;
       margin: 0;
-      max-width: 72ch;
+      min-width: 0;
     }
 
     /* —— 昇級ステップ —— */
