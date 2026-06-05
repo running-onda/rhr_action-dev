@@ -597,8 +597,15 @@
     }
 
     .item-identity {
-      padding: var(--space-lg) var(--space-lg) var(--space-md);
+      padding: var(--space-md) var(--space-lg);
       border-bottom: 1px solid var(--line);
+    }
+
+    .item-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 10px 20px;
     }
 
     .item-title-row {
@@ -607,6 +614,7 @@
       align-items: center;
       gap: 10px 14px;
       margin: 0;
+      flex: 0 0 auto;
     }
 
     .item-name {
@@ -618,18 +626,12 @@
       margin: 0;
     }
 
-    .item-description {
-      padding: var(--space-lg);
-      background: linear-gradient(90deg, var(--major-soft, var(--navy-soft)) 0%, var(--surface) 24%);
-      border-left: 4px solid var(--major-color, var(--ink));
-      border-bottom: 1px solid var(--line);
-    }
-
     .description-text {
-      font-size: 16px;
-      line-height: 1.85;
-      color: var(--ink);
-      font-weight: 500;
+      flex: 1 1 240px;
+      font-size: 12px;
+      line-height: 1.65;
+      color: var(--ink-muted);
+      font-weight: 400;
       margin: 0;
       max-width: 72ch;
     }
@@ -641,12 +643,13 @@
     }
 
     .step {
-      padding: var(--space-md) var(--space-lg);
+      padding: var(--space-lg) var(--space-lg);
       border-bottom: 1px solid var(--line);
       display: grid;
-      grid-template-columns: 140px 120px 1fr;
-      gap: var(--space-md);
+      grid-template-columns: 148px 132px 1fr;
+      gap: var(--space-md) var(--space-lg);
       align-items: start;
+      background: #fafbfc;
     }
 
     .step:last-child {
@@ -654,30 +657,46 @@
     }
 
     .step.highlight {
-      background: var(--navy-highlight);
+      background: linear-gradient(90deg, var(--major-soft, #eef4ef) 0%, #fff 42%);
+      border-left: 4px solid var(--major-color, var(--ink));
+      padding-left: calc(var(--space-lg) - 4px);
+      box-shadow: inset 0 0 0 1px rgba(26, 39, 68, 0.06);
     }
 
     .step.highlight .grade-name {
       color: var(--ink);
+      font-size: 19px;
+    }
+
+    .step.highlight .phase-name {
+      font-weight: 700;
+    }
+
+    .step.highlight .step-body {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
     }
 
     .grade-name {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 800;
       color: var(--ink);
+      letter-spacing: 0.02em;
     }
 
     .phase-name {
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 600;
       color: var(--major-color, var(--teal));
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     .step-body {
-      font-size: 14px;
-      line-height: 1.75;
+      font-size: 16px;
+      line-height: 1.85;
       color: var(--ink);
+      font-weight: 500;
       margin: 0;
     }
 
@@ -1813,12 +1832,12 @@
       return `
         <article class="item-card" style="--major-color: ${theme.color}; --major-soft: ${theme.soft}">
           <div class="item-identity">
-            <h3 class="item-title-row">
-              <span class="item-name">${escapeHtml(d.item)}</span>
-            </h3>
-          </div>
-          <div class="item-description">
-            <p class="description-text">${escapeHtml(d.description)}</p>
+            <div class="item-header-row">
+              <h3 class="item-title-row">
+                <span class="item-name">${escapeHtml(d.item)}</span>
+              </h3>
+              <p class="description-text">${escapeHtml(d.description)}</p>
+            </div>
           </div>
           <div class="steps">
             ${stepIndexes.map(i => renderStep(i, d.steps[i], theme)).join("")}
