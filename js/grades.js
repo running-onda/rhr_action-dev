@@ -5,6 +5,7 @@ export const GRADE_TIERS = [
   { name: "スタメン", phase: "成果化する", hasRank: true, guidelineIndex: 2 },
   { name: "キャプテン", phase: "他者を巻き込む", hasRank: true, guidelineIndex: 3 },
   { name: "選手権監督", phase: "勝ち方を描く", hasRank: true, guidelineIndex: 4 },
+  { name: "監督", phase: "組織を文化にする", hasRank: true, guidelineIndex: 5 },
   { name: "名球会", phase: "社会へ波及する", hasRank: true, guidelineIndex: 6 }
 ];
 
@@ -43,7 +44,6 @@ export function tierIndexFromGuidelineIndex(guidelineIndex) {
   const g = Number(guidelineIndex);
   const found = GRADE_TIERS.find(t => t.guidelineIndex === g);
   if (found) return GRADE_TIERS.indexOf(found);
-  if (g === 5) return 4;
   return 0;
 }
 
@@ -53,7 +53,7 @@ export function parseLegacyGradeName(gradeName) {
 
   if (name === "育成" || name === "育成選手") return { tierIndex: 0, rank: "" };
 
-  const rankMatch = name.match(/^(育成|ファーム|スタメン|キャプテン|選手権監督|名球会)(L|M|H)?$/);
+  const rankMatch = name.match(/^(育成|ファーム|スタメン|キャプテン|選手権監督|監督|名球会)(L|M|H)?$/);
   if (rankMatch) {
     const tierName = rankMatch[1];
     const rank = rankMatch[2] || "";

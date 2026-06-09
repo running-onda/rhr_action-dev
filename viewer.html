@@ -917,27 +917,6 @@
       outline-offset: 2px;
     }
 
-    .btn-add-supervisor {
-      margin-top: 12px;
-      border: 1px dashed var(--ink-muted);
-      background: transparent;
-      color: var(--ink-secondary);
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      width: 100%;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
-    }
-
-    .btn-add-supervisor:hover {
-      border-color: var(--ink);
-      color: var(--ink);
-      background: var(--navy-soft);
-    }
-
     .score-compare-panel {
       margin-bottom: 18px;
       padding: 14px 16px;
@@ -1366,7 +1345,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="すべての小項目に上司評価欄を追加し、氏名も一括入力します">上司を追加</button>
+        <button type="button" class="btn-header btn-header-outline" id="addSupervisorAllBtn" title="ルーム設定の上司を1人目に反映し、追加する上司名だけ入力します">上司を追加</button>
         <a href="insights.html" class="btn-header btn-header-secondary" id="insightsLink">評価サマリー</a>
         <button type="button" class="btn-header btn-header-primary" id="saveAllBtn">すべてを保存する</button>
         <span class="save-toast" id="saveToast" aria-live="polite"></span>
@@ -2026,7 +2005,6 @@
           <div class="supervisors-list">
             ${supervisors.map((sup, i) => renderSupervisorBlock(sup, i)).join("")}
           </div>
-          <button type="button" class="btn-add-supervisor">＋ 上司を追加</button>
           <div class="assess-actions">
             ${renderSaveStatus(saved)}
           </div>
@@ -2077,11 +2055,13 @@
 
     function addSupervisorToAllWithNames() {
       flushVisibleBlocksToAssessments();
-      const defaultMgr1 = roomMeta?.managerName || "";
-      const mgr1 = prompt("1人目の上司の氏名（全項目に反映）", defaultMgr1);
-      if (mgr1 === null) return;
-      const mgr2 = prompt("2人目の上司の氏名（全項目に2人目を追加。空欄なら追加しません）", "");
+      const mgr1 = (roomMeta?.managerName || "").trim();
+      const mgr2 = prompt("追加する上司の氏名（全項目に2人目として反映）", "");
       if (mgr2 === null) return;
+      if (!mgr2.trim()) {
+        alert("追加する上司名を入力してください。");
+        return;
+      }
 
       const allKeys = Object.keys(dataIndexByKey);
       for (const key of allKeys) {
@@ -2091,17 +2071,15 @@
           : [];
 
         if (!sups.length) {
-          sups.push({ name: mgr1.trim(), rating: 0, comment: "" });
-        } else if (mgr1.trim()) {
-          sups[0].name = mgr1.trim();
+          sups.push({ name: mgr1, rating: 0, comment: "" });
+        } else if (mgr1) {
+          sups[0].name = mgr1;
         }
 
-        if (mgr2.trim()) {
-          if (sups.length < 2) {
-            sups.push({ name: mgr2.trim(), rating: 0, comment: "" });
-          } else {
-            sups[1].name = mgr2.trim();
-          }
+        if (sups.length < 2) {
+          sups.push({ name: mgr2.trim(), rating: 0, comment: "" });
+        } else {
+          sups[1].name = mgr2.trim();
         }
 
         assessments[key] = { ...data, supervisors: sups };
@@ -2149,14 +2127,6 @@
               syncBlockToAssessments(key, block);
             });
           });
-        });
-
-        block.querySelector(".btn-add-supervisor")?.addEventListener("click", () => {
-          const current = readAssessFromBlock(block);
-          assessments[key] = { ...(assessments[key] || {}), ...current };
-          assessments[key].supervisors.push({ name: "", rating: 0, comment: "" });
-          saveAssessmentsLocal();
-          renderAndBind();
         });
 
         block.querySelectorAll(".btn-remove-supervisor").forEach(btn => {

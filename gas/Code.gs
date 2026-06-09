@@ -105,7 +105,7 @@ function assertToken(token) {
 }
 
 function parseGradeTierIndex_(body) {
-  const tiersMax = 5;
+  const tiersMax = 6;
   let raw = body.gradeTierIndex;
   if (raw === undefined || raw === null || String(raw).trim() === "") {
     raw = body.gradeIndex;
@@ -654,13 +654,13 @@ function findRoomRowNum_(roomsSheet, roomId, idx) {
 }
 
 function guidelineIndexForTier_(tierIndex) {
-  const map = [0, 1, 2, 3, 4, 6];
+  const map = [0, 1, 2, 3, 4, 5, 6];
   const i = Number(tierIndex);
   return map[i] !== undefined ? map[i] : 0;
 }
 
 function formatGradeLabel_(tierIndex, rank) {
-  const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "名球会"];
+  const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "監督", "名球会"];
   const i = Number(tierIndex);
   const name = tiers[i] || "育成";
   const r = String(rank || "").trim().toUpperCase();
@@ -794,16 +794,16 @@ function roomRowToObj_(row, idx) {
 function parseLegacyGradeName_(gradeName) {
   const name = String(gradeName || "").trim();
   if (!name || name === "育成選手" || name === "育成") return { tierIndex: 0, rank: "" };
-  const m = name.match(/^(育成|ファーム|スタメン|キャプテン|選手権監督|名球会)(L|M|H)?$/);
+  const m = name.match(/^(育成|ファーム|スタメン|キャプテン|選手権監督|監督|名球会)(L|M|H)?$/);
   if (m) {
-    const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "名球会"];
+    const tiers = ["育成", "ファーム", "スタメン", "キャプテン", "選手権監督", "監督", "名球会"];
     const tierIndex = tiers.indexOf(m[1]);
     return { tierIndex: tierIndex >= 0 ? tierIndex : 0, rank: m[2] || "" };
   }
   const legacy = ["育成選手", "ファーム", "スタメン", "キャプテン", "選手権監督", "監督", "名球会"];
   const li = legacy.indexOf(name);
   if (li >= 0) {
-    const map = [0, 1, 2, 3, 4, 4, 5];
+    const map = [0, 1, 2, 3, 4, 5, 6];
     return { tierIndex: map[li] || 0, rank: "" };
   }
   return { tierIndex: 0, rank: "" };
